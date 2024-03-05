@@ -7,6 +7,8 @@ def select_address(addr1: str, addr2: str) -> str:
     """
     addr1_stripped = addr1.lower().strip()
     addr2_stripped = addr2.lower().strip()
+    addr1_stripped = addr1_stripped if addr1_stripped != "null" else ""
+    addr2_stripped = addr2_stripped if addr2_stripped != "null" else ""
 
     if not addr1_stripped and not addr2_stripped:
         return ''
