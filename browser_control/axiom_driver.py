@@ -10,28 +10,23 @@ import time
 
 from browser_utilities.navigate_verifier import identify_page
 from browser_utilities.await_loading import wait_for_loading
+from database_sqlite.database import DatabaseManager
 
 
 class AxiomDriver:
-    def __init__(self):
+    def __init__(self, database: DatabaseManager):
         self.driver = webdriver.Chrome()
         self.actions = ActionChains(self.driver)
-        self.stats = {
-            "create": 0,
-            "skip": 0,
-            "match": 0,
-            "delete": 0,
-            "fix": {
-                "bad address": 0,
-                "bad ceeb": 0,
-            }
-        }
-        atexit.register(self.print_stats)
+        self.database = database
         self.await_login()
         self.goto_verifier()
         self.main_loop()
 
     def await_login(self):
+        """
+        Wait for user to log into Axiom
+        :return: None
+        """
         print("Please log into Axiom")
         self.driver.get("https://axiom-elite-prod.msu.montana.edu/")
         WebDriverWait(self.driver, 300).until(EC.title_is("Axiom Elite - Dashboard"))
@@ -79,6 +74,10 @@ class AxiomDriver:
             verifier.click()
 
     def main_loop(self):
+        """
+        Main logic loop
+        :return: None
+        """
         while True:
             wait_for_loading(self.driver)
             WebDriverWait(self.driver, 10).until(
@@ -86,6 +85,8 @@ class AxiomDriver:
             page = identify_page(self.driver)
             print(page)
             match page:
+                case "match dialogue":
+                    ...
                 case "normal":
                     ...
                 case "error - Address 1":
@@ -94,9 +95,11 @@ class AxiomDriver:
                     ...
                 case "error - High School CEEB":
                     ...
-                case _:
+                case "error - First Name":
                     ...
+                case "error - Last Name":
+                    ...
+                case _:
+                    print(page)
+                    input("")  # arbitrary stop mechanism
             time.sleep(30)
-
-    def print_stats(self):
-        pprint(self.stats)
