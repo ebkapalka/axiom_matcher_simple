@@ -8,7 +8,8 @@ from pprint import pprint
 import atexit
 import time
 
-from utilities.await_loading import wait_for_spinner
+from browserutilities.navigate_verifier import identify_page
+from browserutilities.await_loading import wait_for_loading
 
 
 class AxiomDriver:
@@ -56,9 +57,9 @@ class AxiomDriver:
                 print(type(e), e)
             return False
 
-        if self.driver.current_url != "https://axiom-elite-prod.msu.montana.edu/Dashboard":
+        if "https://axiom-elite-prod.msu.montana.edu/Dashboard" not in self.driver.current_url:
             self.driver.get("https://axiom-elite-prod.msu.montana.edu/Dashboard")
-        wait_for_spinner(self.driver)
+        wait_for_loading(self.driver)
         current_tab = WebDriverWait(self.driver, 10).until(
             _button_with_color_darkgray).get_attribute("title")
         if current_tab == "Card View":
@@ -78,7 +79,23 @@ class AxiomDriver:
             verifier.click()
 
     def main_loop(self):
-        time.sleep(30)
+        while True:
+            wait_for_loading(self.driver)
+            WebDriverWait(self.driver, 10).until(
+                EC.visibility_of_element_located((By.ID, "VerifyRecordViewPort")))
+            page = identify_page(self.driver)
+            match page:
+                case "normal":
+                    ...
+                case "error - Address 1":
+                    ...
+                case "error - Address 2":
+                    ...
+                case "error - High School CEEB":
+                    ...
+                case _:
+                    ...
+            time.sleep(30)
 
     def print_stats(self):
         pprint(self.stats)
