@@ -8,8 +8,8 @@ from pprint import pprint
 import atexit
 import time
 
-from browserutilities.navigate_verifier import identify_page
-from browserutilities.await_loading import wait_for_loading
+from browser_utilities.navigate_verifier import identify_page
+from browser_utilities.await_loading import wait_for_loading
 
 
 class AxiomDriver:
@@ -84,6 +84,7 @@ class AxiomDriver:
             WebDriverWait(self.driver, 10).until(
                 EC.visibility_of_element_located((By.ID, "VerifyRecordViewPort")))
             page = identify_page(self.driver)
+            print(page)
             match page:
                 case "normal":
                     ...

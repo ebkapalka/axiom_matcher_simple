@@ -1,4 +1,4 @@
-from browsercontrol.axiom_driver import AxiomDriver
+from browser_control.axiom_driver import AxiomDriver
 
 
 if __name__ == '__main__':
