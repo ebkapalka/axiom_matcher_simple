@@ -24,8 +24,12 @@ def handle_normal(driver: webdriver) -> str:
     return "new record"
 
 
-
 def handle_bad_address(driver: webdriver) -> str:
+    """
+    Handle a bad address error
+    :param driver: webdriver
+    :return: "deleted record" or '' depending on the result of the operation
+    """
     error_icon_xpath = ("//i[contains(@class, 'sourcefield-error') "
                         "and not(contains(@class, 'hidden'))]")
     error_icon = driver.find_elements(By.XPATH, error_icon_xpath)[0]
@@ -40,7 +44,7 @@ def handle_bad_address(driver: webdriver) -> str:
     print(address_data)
     # error_row = error_icon.find_element(By.XPATH, "../../../div[1]")
     # error_row_input = error_row.find_element(By.XPATH, "./../div[2]/input[1]")
-    # This one could result in a deleted record or a new record
+    # This one could result in a deleted record or None
 
 
 def handle_bad_firstname(driver: webdriver) -> str:
