@@ -6,7 +6,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver import Keys
 from selenium import webdriver
 
-from browser_utilities.navigate_verifier import delete_record
+from browser_utilities.navigate_verifier import delete_record, skip_record
 from matching_utilities.address_picker import select_address
 
 
@@ -50,13 +50,13 @@ def handle_bad_address(driver: webdriver) -> str:
     if not best_address:
         delete_record(driver, "bad address")
         return "deleted record"
+    elif best_address == "skip":
+        skip_record(driver)
+        return "skipped record"
     else:
         address1_elem.send_keys(Keys.CONTROL + "a")
         address1_elem.send_keys(best_address)
         address2_elem.clear()
-    # error_row = error_icon.find_element(By.XPATH, "../../../div[1]")
-    # error_row_input = error_row.find_element(By.XPATH, "./../div[2]/input[1]")
-    # This one could result in a deleted record or None
 
 
 def handle_bad_firstname(driver: webdriver) -> str:
