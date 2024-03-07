@@ -32,7 +32,7 @@ class DatabaseManager:
                 AxiomEvent.event_type,
                 func.count(AxiomEvent.event_type).label('count')
             ).group_by(AxiomEvent.event_type).all()
-
-            print("Event Statistics:")
-            for event_type, count in event_counts:
-                print(f"{event_type}: {count}")
+            if event_counts:
+                print("Event Statistics:")
+                for event_type, count in event_counts:
+                    print(f"{event_type}: {count}")
