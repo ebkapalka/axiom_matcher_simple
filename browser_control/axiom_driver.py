@@ -3,6 +3,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium import webdriver
 import time
+import sys
 
 from browser_utilities.case_handlers import (handle_normal, handle_bad_ceeb, handle_bad_address,
                                              handle_bad_firstname, handle_bad_lastname)
@@ -19,15 +20,25 @@ HANDLERS = {
     "error - Address 2": handle_bad_address,
     "error - High School CEEB": handle_bad_ceeb,
     "error - First Name": handle_bad_firstname,
-    "error - Last Name": handle_bad_lastname
+    "error - Last Name": handle_bad_lastname,
+    # add other handlers here as needed
 }
 
 class AxiomDriver:
-    def __init__(self, database: DatabaseManager):
+    def __init__(self, database: DatabaseManager, run_mode: str = "test"):
+        if run_mode == "test":
+            self.base_url = "https://axiom-elite-test.msu.montana.edu/"
+        elif run_mode == "prod":
+            self.base_url = "https://axiom-elite-prod.msu.montana.edu/"
+        else:
+            print("Invalid run mode")
+            sys.exit()
+
         self.driver = webdriver.Chrome()
         self.database = database
         self.await_login()
-        goto_verifier(self.driver)
+        goto_verifier(self.driver,
+                      self.base_url)
         self.main_loop()
 
     def await_login(self):
@@ -36,7 +47,7 @@ class AxiomDriver:
         :return: None
         """
         print("Please log into Axiom")
-        self.driver.get("https://axiom-elite-prod.msu.montana.edu/")
+        self.driver.get(self.base_url)
         WebDriverWait(self.driver, 300).until(EC.title_is("Axiom Elite - Dashboard"))
         print("Axiom Login Successful")
 
@@ -47,14 +58,18 @@ class AxiomDriver:
         """
         while True:
             wait_for_loading(self.driver)
-            WebDriverWait(self.driver, 10).until(
+            WebDriverWait(self.driver, 30).until(
                 EC.visibility_of_element_located((By.ID, "VerifyRecordViewPort")))
             page = identify_page(self.driver); print(page)
             if page == "finished":
                 return
             elif page in HANDLERS:
                 result = HANDLERS[page](self.driver)
-                # self.database.add_event(page)
+                # if result:
+                #     self.database.add_event(page)
+                #     if result.startswith("error"):
+                #         self.database.add_event(result)
+                # TODO: uncomment the above lines when ready to record events
             else:
                 print(f"Unknown page: {page}")
                 input("Press Enter to continue")
