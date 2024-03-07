@@ -4,9 +4,10 @@ from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium import webdriver
+import time
 
 
-def handle_match_dialogue(driver):
+def handle_match_dialogue(driver: webdriver) -> str:
     """
     Handle the match dialogue by extracting the first row of data from a table.
     :param driver: Instance of webdriver to interact with the browser.
@@ -24,3 +25,6 @@ def handle_match_dialogue(driver):
             # TODO: extract the data from the table
             print(row.text)
         print()
+    time.sleep(100000000)
+    # TODO: return only "skipped" or "".  Any other return value will
+    #  be handled by the normal handler after this dialogue is closed.
