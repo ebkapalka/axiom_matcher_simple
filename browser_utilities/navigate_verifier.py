@@ -5,6 +5,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
 from urllib.parse import urljoin
 from selenium import webdriver
+import time
 import sys
 
 from browser_utilities.await_loading import wait_for_loading
@@ -73,14 +74,14 @@ def identify_page(driver: webdriver) -> str:
         if match_dialogue.get_attribute("aria-hidden") == "false":
             return "match dialogue"
     except NoSuchElementException:
-        pass  # Element not found, proceed to check the next one
+        pass
 
     try:
         final_record_message = driver.find_element(By.ID, "FinalRecordMessage")
         if final_record_message.get_attribute("style") == "display: block;":
             return "finished"
     except NoSuchElementException:
-        pass  # Element not found, proceed to check the next one
+        pass
 
     try:
         error_icon_xpath = ("//i[contains(@class, 'sourcefield-error') "
@@ -92,19 +93,27 @@ def identify_page(driver: webdriver) -> str:
         return "normal"
 
 
-def delete_record(driver: webdriver, reason: str) -> None:
+def delete_record(driver: webdriver, reason: str, timeout=10) -> None:
     """
     Delete the current record, entering the reason
     :param driver: webdriver
     :param reason: explanation for deletion
     :return: None
     """
-    button_delete = WebDriverWait(driver, 10).until(
+    # click delete button
+    button_delete = WebDriverWait(driver, timeout).until(
         EC.element_to_be_clickable((By.ID, "DeleteButton")))
     button_delete.click()
-    input_box = WebDriverWait(driver, 10).until(
-        EC.visibility_of_element_located((By.ID, "DeleteForm")))
+
+    # enter text into the delete notes box
+    input_box = WebDriverWait(driver, timeout).until(
+        EC.visibility_of_element_located((By.ID, "DeleteNotes")))
+    WebDriverWait(driver, timeout).until(
+        EC.element_to_be_clickable((By.ID, "DeleteNotes")))
+    input_box.click()
     input_box.send_keys(reason)
-    button_confirm = WebDriverWait(driver, 10).until(
+
+    # confirm the deletion
+    button_confirm = WebDriverWait(driver, timeout).until(
         EC.element_to_be_clickable((By.ID, "DeleteRecord")))
     button_confirm.click()
