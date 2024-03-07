@@ -5,6 +5,7 @@ def select_address(addr1: str, addr2: str) -> str:
     :param addr2: second address
     :return: ideal address
     """
+    addr2 = addr2.rstrip(". Please review. Address Line 2 is not blank.")
     addr1_stripped = addr1.lower().strip()
     addr2_stripped = addr2.lower().strip()
     addr1_stripped = addr1_stripped if addr1_stripped != "null" else ""
@@ -30,9 +31,11 @@ def select_address(addr1: str, addr2: str) -> str:
                 return addr2
         return addr1
         # TODO: add case for those weird Utah addresses, e.g. 1234 N 5678 W
+        # TODO: add check for city or state in the address1 field
+        # TODO: refactor this function to take a dict with address1, address2, city, state, and zip
 
 
-def contains_letters_and_numbers(s) -> bool:
+def contains_letters_and_numbers(s: str) -> bool:
     """
     Check if a string contains both letters and numbers
     :param s: string to check
