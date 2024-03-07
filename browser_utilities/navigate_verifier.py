@@ -69,6 +69,7 @@ def identify_page(driver: webdriver) -> str:
     :param driver: webdriver
     :return: string identifying the page
     """
+    # check for the match dialogue
     try:
         match_dialogue = driver.find_element(By.CLASS_NAME, "bs-matchstatus-modal")
         if match_dialogue.get_attribute("aria-hidden") == "false":
@@ -76,6 +77,7 @@ def identify_page(driver: webdriver) -> str:
     except NoSuchElementException:
         pass
 
+    # check for the final record message
     try:
         final_record_message = driver.find_element(By.ID, "FinalRecordMessage")
         if final_record_message.get_attribute("style") == "display: block;":
@@ -83,12 +85,14 @@ def identify_page(driver: webdriver) -> str:
     except NoSuchElementException:
         pass
 
+    # check for errors
     try:
         error_icon_xpath = ("//i[contains(@class, 'sourcefield-error') "
                             "and not(contains(@class, 'hidden'))]")
         error_icon = driver.find_element(By.XPATH, error_icon_xpath)
         error_row = error_icon.find_element(By.XPATH, "../../../div[1]")
         return f"error - {error_row.text}"
+    # if no errors, return "normal"
     except NoSuchElementException:
         return "normal"
 
@@ -98,6 +102,7 @@ def delete_record(driver: webdriver, reason: str, timeout=10) -> None:
     Delete the current record, entering the reason
     :param driver: webdriver
     :param reason: explanation for deletion
+    :param timeout: time to wait for the elements
     :return: None
     """
     # click delete button
@@ -117,3 +122,15 @@ def delete_record(driver: webdriver, reason: str, timeout=10) -> None:
     button_confirm = WebDriverWait(driver, timeout).until(
         EC.element_to_be_clickable((By.ID, "DeleteRecord")))
     button_confirm.click()
+
+
+def skip_record(driver: webdriver, timeout=10) -> None:
+    """
+    Skip the current record
+    :param driver: webdriver
+    :param timeout: time to wait for the element to be clickable
+    :return: None
+    """
+    button_skip = WebDriverWait(driver, timeout).until(
+        EC.element_to_be_clickable((By.ID, "NavForwardButton")))
+    button_skip.click()
