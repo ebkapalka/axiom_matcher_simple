@@ -3,9 +3,11 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
+from selenium.webdriver import Keys
 from selenium import webdriver
 
 from browser_utilities.navigate_verifier import delete_record
+from matching_utilities.address_picker import select_address
 
 
 def handle_normal(driver: webdriver) -> str:
@@ -17,8 +19,7 @@ def handle_normal(driver: webdriver) -> str:
     button_done = WebDriverWait(driver, 10).until(
         EC.element_to_be_clickable((By.ID, "SubmitButton")))
     return_text = button_done.text
-    # button_done.click()
-    # TODO: uncomment the above line when ready to submit records
+    button_done.click()
     if return_text == "Submit Match":
         return "matched record"
     return "new record"
@@ -34,14 +35,25 @@ def handle_bad_address(driver: webdriver) -> str:
                         "and not(contains(@class, 'hidden'))]")
     error_icon = driver.find_elements(By.XPATH, error_icon_xpath)[0]
     address_elem_group = error_icon.find_element(By.XPATH, "../../../..")
+    address1_elem = address_elem_group.find_element(By.XPATH, "./div[1]/div[2]/input[1]")
+    address2_elem = address_elem_group.find_element(By.XPATH, "./div[2]/div[2]/input[1]")
     address_data = {
-        "Address 1": address_elem_group.find_element(By.XPATH, "./div[1]/div[2]/input[1]").get_attribute("value"),
-        "Address 2": address_elem_group.find_element(By.XPATH, "./div[2]/div[2]/input[1]").get_attribute("value"),
+        "Address 1": address1_elem.get_attribute("value"),
+        "Address 2": address2_elem.get_attribute("value"),
         "City": address_elem_group.find_element(By.XPATH, "./div[4]/div[2]/input[1]").get_attribute("value"),
         "State": address_elem_group.find_element(By.XPATH, "./div[5]/div[2]/input[1]").get_attribute("value"),
         "Zip": address_elem_group.find_element(By.XPATH, "./div[6]/div[2]/input[1]").get_attribute("value"),
     }
     print(address_data)
+    best_address = select_address(address_data)
+    print(best_address, end='\n\n')
+    if not best_address:
+        delete_record(driver, "bad address")
+        return "deleted record"
+    else:
+        address1_elem.send_keys(Keys.CONTROL + "a")
+        address1_elem.send_keys(best_address)
+        address2_elem.clear()
     # error_row = error_icon.find_element(By.XPATH, "../../../div[1]")
     # error_row_input = error_row.find_element(By.XPATH, "./../div[2]/input[1]")
     # This one could result in a deleted record or None
