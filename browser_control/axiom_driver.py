@@ -6,7 +6,7 @@ import time
 import sys
 
 from browser_utilities.case_handlers import (handle_normal, handle_bad_ceeb, handle_bad_address,
-                                             handle_bad_firstname, handle_bad_lastname)
+                                             handle_bad_firstname, handle_bad_lastname, handle_bad_city)
 from browser_utilities.navigate_verifier import identify_page, goto_verifier
 from matching_utilities.match_handler import handle_match_dialogue
 from browser_utilities.await_loading import wait_for_loading
@@ -21,6 +21,7 @@ HANDLERS = {
     "error - High School CEEB": handle_bad_ceeb,
     "error - First Name": handle_bad_firstname,
     "error - Last Name": handle_bad_lastname,
+    "error - City": handle_bad_city,
     # add other handlers here as needed
 }
 
@@ -60,17 +61,15 @@ class AxiomDriver:
             wait_for_loading(self.driver)
             WebDriverWait(self.driver, 30).until(
                 EC.visibility_of_element_located((By.ID, "VerifyRecordViewPort")))
-            page = identify_page(self.driver); print(page)
+            page = identify_page(self.driver)
             if page == "finished":
                 return
             elif page in HANDLERS:
                 result = HANDLERS[page](self.driver)
-                # if result:
-                #     self.database.add_event(page)
-                #     if result.startswith("error"):
-                #         self.database.add_event(result)
-                # TODO: uncomment the above lines when ready to record events
+                if result:
+                    self.database.add_event(page)
+                    if result.startswith("error"):
+                        self.database.add_event(result)
             else:
                 print(f"Unknown page: {page}")
                 input("Press Enter to continue")
-            time.sleep(30)
