@@ -1,3 +1,5 @@
+import time
+
 from matching_utilities.address_utils import (split_into_parts,
                                               process_addr,
                                               contains_letters_and_numbers)
@@ -40,7 +42,13 @@ def select_address(addr_dict: dict) -> str:
     else:
         addr1_stripped = '' if street_contains_csz(addr1_stripped, city, state, zip_code) else addr1_stripped
         addr2_stripped = '' if street_contains_csz(addr2_stripped, city, state, zip_code) else addr2_stripped
-        addr1_stripped, addr2_stripped = is_split_utah_address(addr1_stripped, addr2_stripped)
+        if state == "ut":
+            old_addr1_stripped = addr1_stripped[:]
+            addr1_stripped, addr2_stripped = (
+                is_split_utah_address(addr1_stripped, addr2_stripped))
+            # if the address changed, update the address that will be returned
+            if addr1_stripped != old_addr1_stripped:
+                addr_dict['Address 1'] = addr1_stripped
         addr1_has_alnum = contains_letters_and_numbers(addr1_stripped)
         addr2_has_alnum = contains_letters_and_numbers(addr2_stripped)
         if not addr1_has_alnum and not addr2_has_alnum:
