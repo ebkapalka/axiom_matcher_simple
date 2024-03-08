@@ -26,6 +26,7 @@ def split_into_parts(addr: str) -> list[str]:
     for part in parts:
         # Further split by non-alphanumeric characters and filter empty strings
         sub_parts = [sub_part for sub_part in re.split(r'\W+', part) if sub_part]
+        sub_parts = [s for s in sub_parts if s not in ['th', 'rd', 'nd', 'st']]
         if len(sub_parts) > 2:
             return []  # Return an empty list to indicate a failure in the condition
         processed_parts.extend(sub_parts)
