@@ -34,8 +34,12 @@ def select_address(addr_dict: dict) -> str:
     if not addr1_stripped and not addr2_stripped:
         return ''
     elif addr1_stripped == addr2_stripped:
+        if street_contains_csz(addr1_stripped, city, state, zip_code):
+            return "skip"
         return addr_dict['Address 1']
     else:
+        addr1_stripped = '' if street_contains_csz(addr1_stripped, city, state, zip_code) else addr1_stripped
+        addr2_stripped = '' if street_contains_csz(addr2_stripped, city, state, zip_code) else addr2_stripped
         addr1_has_alnum = contains_letters_and_numbers(addr1_stripped)
         addr2_has_alnum = contains_letters_and_numbers(addr2_stripped)
         if not addr1_has_alnum and not addr2_has_alnum:
@@ -50,7 +54,6 @@ def select_address(addr_dict: dict) -> str:
             if "box" in addr2_stripped:
                 return addr2
         return addr_dict['Address 1']
-        # TODO: add check for city or state in the address1 field
 
 
 def is_split_utah_address(addr1, addr2) -> tuple[str, str]:
@@ -76,3 +79,21 @@ def is_split_utah_address(addr1, addr2) -> tuple[str, str]:
             and set(addr1_dirs) != set(addr2_dirs)):
         return f"{addr1} {addr2}", ""
     return addr1, addr2
+
+
+def street_contains_csz(addr: str, city: str, state: str, zip_code: str) -> bool:
+    """
+    Check if the street address (address1 or address2) contains the city, state, or zip
+    :param addr: address to check
+    :param city: city to check for in the address
+    :param state: state to check for in the address
+    :param zip_code: zip code to check for in the address
+    :return: boolean
+    """
+    if city and city in addr:
+        return True
+    if state and state in split_into_parts(addr):
+        return True
+    if zip_code and zip_code.split('-')[0] in addr:
+        return True
+    return False
