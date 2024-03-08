@@ -44,9 +44,7 @@ def handle_bad_address(driver: webdriver) -> str:
         "State": address_elem_group.find_element(By.XPATH, "./div[5]/div[2]/input[1]").get_attribute("value"),
         "Zip": address_elem_group.find_element(By.XPATH, "./div[6]/div[2]/input[1]").get_attribute("value"),
     }
-    print(address_data)
     best_address = select_address(address_data)
-    print(best_address, end='\n\n')
     if not best_address:
         delete_record(driver, "bad address")
         return "deleted record"
@@ -92,3 +90,13 @@ def handle_bad_ceeb(driver: webdriver) -> str:
     error_row_input = error_row.find_element(By.XPATH, "./../div[2]/input[1]")
     error_row_input.clear()
     return ''  # this doesn't necessarily result in a new or deleted record
+
+
+def handle_bad_city(driver: webdriver):
+    """
+    Delete record with bad city
+    :param driver: webdriver
+    :return: "deleted record", since this condition always results in a deleted record
+    """
+    delete_record(driver, "bad address")
+    return "deleted record"
