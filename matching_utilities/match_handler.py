@@ -4,7 +4,9 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium import webdriver
 from rapidfuzz import fuzz
+import unicodedata
 import time
+import re
 
 from browser_utilities.navigate_verifier import skip_record
 
@@ -15,14 +17,16 @@ def handle_match_dialogue(driver: webdriver) -> str:
     :param driver: Instance of webdriver to interact with the browser.
     :return: Dictionary mapping table column headers to the values of the first row.
     """
-    match_table = WebDriverWait(driver, 10).until(
+    match_table = WebDriverWait(driver, 30).until(
         EC.presence_of_element_located((By.ID, "MatchListTable")))
     records = match_table.find_elements(By.XPATH, "./tbody/tr")
     incoming_prospect = {}
     potential_matches = []
     for record in records[1:]:
-        record.click()
-        comparison_table = WebDriverWait(driver, 10).until(
+        while 'selected-value' not in record.get_attribute("class"):
+            record.click()
+            time.sleep(0.1)
+        comparison_table = WebDriverWait(driver, 30).until(
             EC.presence_of_element_located((By.ID, "MatchComparisonTable")))
         rows = comparison_table.find_elements(By.XPATH, "./tbody/tr")
 
@@ -65,9 +69,11 @@ def decide_best_match(incoming_prospect: dict, potential_matches: list[dict], na
     :param name_thresh: Threshold for the name similarity score.
     :return: Student_id of the best match.
     """
-    prospect_name = f"{incoming_prospect["First Name"]} {incoming_prospect["Last Name"]}"
+    prospect_name = (process_name(incoming_prospect["First Name"],
+                                  incoming_prospect["Last Name"]))
     for potential_match in potential_matches:
-        match_name = f"{potential_match["First Name"]} {potential_match["Last Name"]}"
+        match_name = process_name(potential_match["First Name"],
+                                  potential_match["Last Name"])
         name_similarity = fuzz.token_set_ratio(prospect_name, match_name)
         if potential_match["Email"] == incoming_prospect["Email"]:
             if name_similarity <= name_thresh:
@@ -98,7 +104,39 @@ def select_match_element(driver: webdriver, elem: WebElement) -> None:
     """
     while 'selected-value' not in elem.get_attribute("class"):
         elem.click()
-        time.sleep(.1)
+        time.sleep(.5)
     button_savematch = WebDriverWait(driver, 10).until(
         EC.element_to_be_clickable((By.ID, "SaveMatchButton")))
     button_savematch.click()
+
+
+def process_name(first_name: str, last_name: str) -> str:
+    """
+    Process the first and last name of a student.
+    :param first_name: First name of the student.
+    :param last_name: Last name of the student.
+    :return: Processed name.
+    """
+    def _normalize_string(input_string: str) -> str:
+        """
+        Normalize a string by removing accents and non-alpha characters, and converting to lowercase.
+        :param input_string: The string to normalize.
+        :return: Normalized string.
+        """
+        nfkd_form = unicodedata.normalize('NFKD', input_string)
+        only_ascii = nfkd_form.encode('ASCII', 'ignore').decode()
+        cleaned_string = re.sub(r'[^a-zA-Z ]', '', only_ascii).lower()
+        return cleaned_string
+
+    common_prefixes = {"mr", "mrs", "ms", "miss", "dr"}
+    first_name = first_name.lower().strip()
+    first_name = _normalize_string(first_name)
+    first_name = first_name.split()
+    first_name = [s for s in first_name if s not in common_prefixes]
+
+    common_suffixes = {"jr", "sr", "ii", "iii", "iv", "v"}
+    last_name = last_name.lower().strip()
+    last_name = _normalize_string(last_name)
+    last_name = last_name.split()
+    last_name = [s for s in last_name if s not in common_suffixes]
+    return f"{first_name[0]} {last_name[-1]}"
