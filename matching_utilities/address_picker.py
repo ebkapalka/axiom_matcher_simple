@@ -40,6 +40,7 @@ def select_address(addr_dict: dict) -> str:
     else:
         addr1_stripped = '' if street_contains_csz(addr1_stripped, city, state, zip_code) else addr1_stripped
         addr2_stripped = '' if street_contains_csz(addr2_stripped, city, state, zip_code) else addr2_stripped
+        addr1_stripped, addr2_stripped = is_split_utah_address(addr1_stripped, addr2_stripped)
         addr1_has_alnum = contains_letters_and_numbers(addr1_stripped)
         addr2_has_alnum = contains_letters_and_numbers(addr2_stripped)
         if not addr1_has_alnum and not addr2_has_alnum:
