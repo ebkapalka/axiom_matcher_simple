@@ -1,10 +1,12 @@
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium import webdriver
+from rapidfuzz import fuzz
 import time
+
+from browser_utilities.navigate_verifier import skip_record
 
 
 def handle_match_dialogue(driver: webdriver) -> str:
@@ -26,9 +28,10 @@ def handle_match_dialogue(driver: webdriver) -> str:
 
         # extract the values for the potential match
         potential_match = {}
-        for row in rows[1:]:
+        for row in rows:
             potential_match[row.find_element(By.XPATH, "./td[1]").text] = (
                 row.find_element(By.XPATH, "./td[3]").text)
+        potential_match["element"] = record
         potential_matches.append(potential_match)
 
         # extract the values for the incoming prospect
@@ -36,19 +39,66 @@ def handle_match_dialogue(driver: webdriver) -> str:
             for row in rows[1:]:
                 incoming_prospect[row.find_element(By.XPATH, "./td[1]").text] = (
                     row.find_element(By.XPATH, "./td[2]").text)
-    print(incoming_prospect)
-    for potential_match in potential_matches:
-        print(potential_match)
-    time.sleep(100000000)
-    # TODO: return only "skipped" or "".  Any other return value will
-    #  be handled by the normal handler after this dialogue is closed.
+
+    # decide the best match and act accordingly
+    best_match = decide_best_match(incoming_prospect, potential_matches)
+    if best_match == "skip":
+        skip_record(driver)
+        return "skip"
+    elif best_match == "new record":
+        button_new_record = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.CLASS_NAME, "NewRecordButton")))
+        button_new_record.click()
+        return ''
+    elif isinstance(best_match, WebElement):
+        select_match_element(driver, best_match)
+    else:
+        print("Unhandled case")
+        print(type(best_match), best_match)
 
 
-def decide_best_match(incoming_prospect: dict, potential_matches: list[dict]) -> str:
+def decide_best_match(incoming_prospect: dict, potential_matches: list[dict], name_thresh=80) -> str | WebElement:
     """
     Decide the best match from a list of potential matches.
     :param incoming_prospect: Dictionary mapping column headers to values for the incoming prospect.
     :param potential_matches: List of dictionaries mapping column headers to values for potential matches.
+    :param name_thresh: Threshold for the name similarity score.
     :return: Student_id of the best match.
     """
-    pass
+    prospect_name = f"{incoming_prospect["First Name"]} {incoming_prospect["Last Name"]}"
+    for potential_match in potential_matches:
+        match_name = f"{potential_match["First Name"]} {potential_match["Last Name"]}"
+        name_similarity = fuzz.token_set_ratio(prospect_name, match_name)
+        if potential_match["Email"] == incoming_prospect["Email"]:
+            if name_similarity <= name_thresh:
+                return "skip"
+            return potential_match["element"]
+        elif potential_match["Address 1"] == incoming_prospect["Address 1"]:
+            if name_similarity <= name_thresh:
+                return "skip"
+            return potential_match["element"]
+        elif (potential_match["City"] == incoming_prospect["City"]
+              and potential_match["Birth Date"] == incoming_prospect["Birth Date"]
+              and name_similarity == 100):
+            return potential_match["element"]
+        elif (potential_match["City"] == incoming_prospect["City"]
+              and potential_match["Birth Date"] == incoming_prospect["Birth Date"]
+              and name_similarity >= name_thresh):
+            return "skip"
+        else:
+            return "new record"
+
+
+def select_match_element(driver: webdriver, elem: WebElement) -> None:
+    """
+    Select a match by the student_id.
+    :param driver: Instance of webdriver to interact with the browser.
+    :param elem: WebElement to select.
+    :return: None
+    """
+    while 'selected-value' not in elem.get_attribute("class"):
+        elem.click()
+        time.sleep(.1)
+    button_savematch = WebDriverWait(driver, 10).until(
+        EC.element_to_be_clickable((By.ID, "SaveMatchButton")))
+    button_savematch.click()
