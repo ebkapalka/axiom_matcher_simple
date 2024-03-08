@@ -1,6 +1,4 @@
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver import Keys
@@ -21,7 +19,9 @@ def handle_normal(driver: webdriver) -> str:
     return_text = button_done.text
     button_done.click()
     if return_text == "Submit Match":
+        print("Matched record")
         return "matched record"
+    print("New record")
     return "new record"
 
 
@@ -95,6 +95,16 @@ def handle_bad_ceeb(driver: webdriver) -> str:
 def handle_bad_city(driver: webdriver):
     """
     Delete record with bad city
+    :param driver: webdriver
+    :return: "deleted record", since this condition always results in a deleted record
+    """
+    delete_record(driver, "bad address")
+    return "deleted record"
+
+
+def handle_bad_zip(driver: webdriver):
+    """
+    Delete record with bad zipcode
     :param driver: webdriver
     :return: "deleted record", since this condition always results in a deleted record
     """
