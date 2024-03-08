@@ -1,11 +1,10 @@
-from selenium.common import NoSuchElementException
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.wait import WebDriverWait
+from selenium.common import NoSuchElementException
 from selenium.webdriver.common.by import By
 from urllib.parse import urljoin
 from selenium import webdriver
-import time
 import sys
 
 from browser_utilities.await_loading import wait_for_loading
@@ -105,6 +104,8 @@ def delete_record(driver: webdriver, reason: str, timeout=10) -> None:
     :param timeout: time to wait for the elements
     :return: None
     """
+    print(f"Deleting record: {reason}")
+
     # click delete button
     button_delete = WebDriverWait(driver, timeout).until(
         EC.element_to_be_clickable((By.ID, "DeleteButton")))
@@ -131,6 +132,7 @@ def skip_record(driver: webdriver, timeout=10) -> None:
     :param timeout: time to wait for the element to be clickable
     :return: None
     """
+    print("Skipping record")
     button_skip = WebDriverWait(driver, timeout).until(
         EC.element_to_be_clickable((By.ID, "NavForwardButton")))
     button_skip.click()
