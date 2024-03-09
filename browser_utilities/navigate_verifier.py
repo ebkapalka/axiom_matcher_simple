@@ -17,6 +17,7 @@ def goto_verifier(driver: webdriver, base_url: str):
     :param base_url: base url of the site
     :return: None
     """
+
     def _button_with_color_darkgray(dr: webdriver) -> WebElement | bool:
         """
         Find the button with the darkgray color
@@ -68,6 +69,22 @@ def identify_page(driver: webdriver) -> str:
     :param driver: webdriver
     :return: string identifying the page
     """
+
+    def element_has_non_null_text(xpath: str, parent_element: WebElement) -> WebElement | bool:
+        """
+        Check if an element has non-null text
+        :param xpath: xpath of the element relative to the parent
+        :param parent_element: parent element to start the search
+        :return:
+        """
+        try:
+            element = parent_element.find_element(By.XPATH, xpath)
+            if element.text != "":
+                return element
+        except:
+            pass
+        return False
+
     # check for the match dialogue
     try:
         match_dialogue = driver.find_element(By.CLASS_NAME, "bs-matchstatus-modal")
@@ -88,8 +105,10 @@ def identify_page(driver: webdriver) -> str:
     try:
         error_icon_xpath = ("//i[contains(@class, 'sourcefield-error') "
                             "and not(contains(@class, 'hidden'))]")
+        error_row_xpath = "../../../div[1]"
         error_icon = driver.find_element(By.XPATH, error_icon_xpath)
-        error_row = error_icon.find_element(By.XPATH, "../../../div[1]")
+        error_row = WebDriverWait(driver, 10).until(
+            lambda _: element_has_non_null_text(error_row_xpath, error_icon))
         return f"error - {error_row.text}"
     # if no errors, return "normal"
     except NoSuchElementException:
