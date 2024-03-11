@@ -52,7 +52,7 @@ class DatabaseManager:
                     processed_records = processed_records[:i + 1]
                     break
 
-            # Calculate the number of records processed per hour
+            # Calculate the number of records processed per hour and minute
             if processed_records:
                 start_time = processed_records[-1].timestamp
                 end_time = processed_records[0].timestamp
