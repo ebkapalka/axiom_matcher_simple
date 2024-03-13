@@ -1,3 +1,4 @@
+from selenium.common import TimeoutException
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
@@ -19,6 +20,11 @@ def wait_for_loading(driver: webdriver, timeout=300):
         EC.invisibility_of_element_located((By.ID, "fullpage-overlay")))
     WebDriverWait(driver, timeout).until(
         lambda d: _class_no_longer_present(d, (By.CSS_SELECTOR, "input.updating")))
+    try:
+        WebDriverWait(driver, 1).until(
+            EC.invisibility_of_element_located((By.ID, "Form3")))
+    except TimeoutException:
+        driver.refresh()
 
 
 def _class_no_longer_present(driver: webdriver, selector: tuple):
