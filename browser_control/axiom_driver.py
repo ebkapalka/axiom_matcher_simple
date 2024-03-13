@@ -27,7 +27,7 @@ HANDLERS = {
 }
 
 class AxiomDriver:
-    def __init__(self, database: DatabaseManager, run_mode: str = "test"):
+    def __init__(self, database: DatabaseManager, run_mode: str = "test", option: str = "default"):
         if run_mode == "test":
             self.base_url = "https://axiom-elite-test.msu.montana.edu/"
         elif run_mode == "prod":
@@ -38,9 +38,11 @@ class AxiomDriver:
 
         self.driver = webdriver.Chrome()
         self.database = database
+        self.option = option
         self.await_login()
         goto_verifier(self.driver,
-                      self.base_url)
+                      self.base_url,
+                      self.option)
         self.main_loop()
 
     def await_login(self):
