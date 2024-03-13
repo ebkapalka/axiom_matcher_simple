@@ -10,7 +10,7 @@ import sys
 from browser_utilities.await_loading import wait_for_loading
 
 
-def goto_verifier(driver: webdriver, base_url: str):
+def goto_verifier(driver: webdriver, base_url: str, option: str = "default"):
     """
     Go to the verifier page
     :param driver: webdriver
@@ -46,12 +46,24 @@ def goto_verifier(driver: webdriver, base_url: str):
         title_elem = WebDriverWait(driver, 10).until(
             EC.visibility_of_element_located((By.XPATH, "//span[text()='01 Bozeman UG EAB Prospect']")))
         body_elem = title_elem.find_element(By.XPATH, './../../../div[2]')
-        verifier = body_elem.find_element(By.XPATH, './div[1]/div[2]')
+        if option == "default":
+            verifier = body_elem.find_element(By.XPATH, './div[1]/div[2]')
+        elif option == "error":
+            verifier = body_elem.find_element(By.XPATH, './div[4]/div[2]')
+        else:
+            print("Invalid option")
+            sys.exit()
         verifier_count = verifier.text.strip()
     else:
         title_elem = WebDriverWait(driver, 10).until(
             EC.visibility_of_element_located((By.XPATH, "//td[text()='01 Bozeman UG EAB Prospect']")))
-        verifier = title_elem.find_element(By.XPATH, './../td[2]')
+        if option == "default":
+            verifier = title_elem.find_element(By.XPATH, './../td[2]')
+        elif option == "error":
+            verifier = title_elem.find_element(By.XPATH, './../td[5]')
+        else:
+            print("Invalid option")
+            sys.exit()
         verifier_count = verifier.text.strip()
 
     # click the verifier if there are records to process
