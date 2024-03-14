@@ -1,6 +1,7 @@
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
+from multiprocessing import Lock
 from selenium import webdriver
 import sys
 
@@ -29,7 +30,8 @@ HANDLERS = {
 
 
 class AxiomWorker:
-    def __init__(self, database: DatabaseManager, run_mode: str = "test", option: str = "default"):
+    def __init__(self, database: DatabaseManager, config: dict, credentials: dict):
+        run_mode = config["environment mode"]
         if run_mode == "test":
             self.base_url = "https://axiom-elite-test.msu.montana.edu/"
         elif run_mode == "prod":
@@ -40,7 +42,7 @@ class AxiomWorker:
 
         self.driver = webdriver.Chrome()
         self.database = database
-        self.option = option
+        self.option = config["issue type"]
         self.await_login()
         goto_verifier(self.driver,
                       self.base_url,
