@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
 
@@ -13,3 +13,13 @@ class AxiomEvent(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     event_type = Column(String, nullable=False)
     timestamp = Column(DateTime, server_default=func.now())
+
+
+class URL(Base):
+    """
+    Model to store URLs and their status
+    """
+    __tablename__ = 'urls'
+    url = Column(String, primary_key=True)
+    is_checked_out = Column(Boolean, default=False)
+    is_processed = Column(Boolean, default=False)
