@@ -12,7 +12,7 @@ REC_TYPES = {
 }
 
 
-def print_db_stats(config: dict):
+def wrapup_db(config: dict):
     """
     Print the statistics of the database
     :param config: dictionary of configuration options
@@ -20,6 +20,7 @@ def print_db_stats(config: dict):
     """
     uri = config["database uri"]
     db_manager = DatabaseManager(uri)
+    db_manager.reset_checked_out_urls()
     db_manager.print_stats()
 
 
@@ -56,6 +57,7 @@ def main(num_proc: int, config: dict):
     Main function
     :return: None
     """
+    num_proc = max(1, min(10, num_proc))
     with Manager() as manager:
         urls = manager.list()
         creds = manager.dict()
@@ -84,5 +86,5 @@ if __name__ == '__main__':
         "record type": "prospects",  # "prospects" or "act"
         "database uri": "sqlite:///database_sqlite/database.db"
     }
-    atexit.register(print_db_stats, configuration)
+    atexit.register(wrapup_db, configuration)
     main(num_processes, configuration)
