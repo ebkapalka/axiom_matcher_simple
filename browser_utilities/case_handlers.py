@@ -50,7 +50,7 @@ def handle_bad_address(driver: webdriver) -> str:
         return "deleted record"
     elif best_address == "skip":
         skip_record(driver)
-        return "skipped record"
+        return "skip"
     else:
         address1_elem.send_keys(Keys.CONTROL + "a")
         address1_elem.send_keys(best_address)
