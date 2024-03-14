@@ -92,7 +92,7 @@ def handle_bad_ceeb(driver: webdriver) -> str:
     return ''  # this doesn't necessarily result in a new or deleted record
 
 
-def handle_bad_city(driver: webdriver):
+def handle_bad_city(driver: webdriver) -> str:
     """
     Delete record with bad city
     :param driver: webdriver
@@ -102,7 +102,17 @@ def handle_bad_city(driver: webdriver):
     return "deleted record"
 
 
-def handle_bad_zip(driver: webdriver):
+def handle_bad_zip(driver: webdriver) -> str:
+    """
+    Delete record with bad zipcode
+    :param driver: webdriver
+    :return: "deleted record", since this condition always results in a deleted record
+    """
+    delete_record(driver, "bad address")
+    return "deleted record"
+
+
+def handle_bad_state(driver: webdriver) -> str:
     """
     Delete record with bad zipcode
     :param driver: webdriver
