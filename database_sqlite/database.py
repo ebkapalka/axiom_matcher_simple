@@ -1,5 +1,5 @@
 from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy import create_engine, func
+from sqlalchemy import create_engine, func, event
 from datetime import datetime, timedelta
 import atexit
 
@@ -9,6 +9,20 @@ from database_sqlite.models import Base, AxiomEvent
 class DatabaseManager:
     def __init__(self, uri: str):
         self.engine = create_engine(uri, echo=False)
+
+        # Ensure WAL mode is set for SQLite databases
+        @event.listens_for(self.engine, "connect")
+        def set_sqlite_pragma(dbapi_connection, connection_record):
+            """
+            Set the SQLite PRAGMA journal_mode to WAL
+            :param dbapi_connection: database connection
+            :param connection_record: record of the connection
+            :return: None
+            """
+            cursor = dbapi_connection.cursor()
+            cursor.execute("PRAGMA journal_mode=WAL;")
+            cursor.close()
+
         Base.metadata.create_all(bind=self.engine)
         self.SessionLocal = sessionmaker(autocommit=False,
                                          autoflush=False,
@@ -59,5 +73,7 @@ class DatabaseManager:
                 total_hours = (end_time - start_time).total_seconds() / 3600.0
                 processed_per_hour = len(processed_records) / total_hours if total_hours > 0 else 0
                 processed_per_minute = processed_per_hour / 60
-                print(f"Processed Records Per Hour: {processed_per_hour:.2f}")
-                print(f"Processed Records Per Minute: {processed_per_minute:.2f}")
+                print(f"Processed Records Per Hour: ~{processed_per_hour:.2f}")
+                print(f"Processed Records Per Minute: ~{processed_per_minute:.2f}")
+                print(f"Seconds per Record: ~{60 / processed_per_minute:.5f}")
+                print(f"Total Hours Last Run: {total_hours:.2f}")
