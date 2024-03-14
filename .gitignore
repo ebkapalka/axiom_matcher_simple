@@ -160,3 +160,5 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 /database_sqlite/database.db
+/database_sqlite/database.db-wal
+/database_sqlite/database.db-shm
