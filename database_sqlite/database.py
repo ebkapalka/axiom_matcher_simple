@@ -1,7 +1,6 @@
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy import create_engine, func, event
-from datetime import datetime, timedelta
-import atexit
+from datetime import timedelta
 
 from database_sqlite.models import Base, AxiomEvent
 
@@ -27,12 +26,20 @@ class DatabaseManager:
         self.SessionLocal = sessionmaker(autocommit=False,
                                          autoflush=False,
                                          bind=self.engine)
-        atexit.register(self.print_stats)
 
     def get_session(self) -> Session:
+        """
+        Get a session from the database
+        :return: Session object
+        """
         return self.SessionLocal()
 
     def add_event(self, event_type: str):
+        """
+        Add an event to the database
+        :param event_type: type of event
+        :return: None
+        """
         with self.get_session() as session:
             new_event = AxiomEvent(event_type=event_type)
             session.add(new_event)
