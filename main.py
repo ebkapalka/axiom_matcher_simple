@@ -1,31 +1,88 @@
-from browser_control.axiom_driver import AxiomDriver
+from browser_control.axiom_fetcher import AxiomFetcher
+from browser_control.axiom_worker import AxiomWorker
 from database_sqlite.database import DatabaseManager
 
-from multiprocessing import Process
+from multiprocessing import Process, Manager, Lock
+import atexit
+
+REC_TYPES = {
+    "prospects": 601,
+    "act": 361,
+    # add other record types here as needed
+}
 
 
-def run_axiom_driver(uri: str, mode: str, opt: str):
+def print_db_stats(config: dict):
     """
-    Run the AxiomDriver in a separate process
-    :param uri: uri for the database
-    :param mode: "prod" or "test"
-    :param option: "default" or "error"
+    Print the statistics of the database
+    :param config: dictionary of configuration options
     :return: None
     """
+    uri = config["database uri"]
     db_manager = DatabaseManager(uri)
-    AxiomDriver(db_manager, mode, opt)
+    db_manager.print_stats()
+
+
+def run_fetcher(config: dict, credentials: dict,
+                shared_urls: list, lock_obj: Lock):
+    """
+    Run the AxiomFetcher in a separate process
+    :param config: dictionary of configuration options
+    :param credentials: dictionary of credentials
+    :param shared_urls: list of urls to process
+    :param lock_obj: lock_obj for the shared_urls list
+    :return: None
+    """
+    AxiomFetcher(config, credentials, shared_urls, lock_obj)
+
+
+def run_worker(config: dict, credentials: dict,
+               shared_urls: list, lock_obj: Lock):
+    """
+    Run the AxiomFetcher in a separate process
+    :param config: dictionary of configuration options
+    :param credentials: dictionary of credentials
+    :param shared_urls: list of urls to process
+    :param lock_obj: lock_obj for the shared_urls list
+    :return: None
+    """
+    uri = config["database uri"]
+    db_manager = DatabaseManager(uri)
+    AxiomWorker(db_manager, credentials, shared_urls, lock_obj)
+
+
+def main(num_proc: int, config: dict):
+    """
+    Main function
+    :return: None
+    """
+    with Manager() as manager:
+        urls = manager.list()
+        creds = manager.dict()
+        lock = Lock()
+        fetch_proc = Process(target=run_fetcher, args=(config, creds, urls, lock))
+
+        # start the processes
+        worker_processes = []
+        for _ in range(num_proc):
+            worker_proc = Process(target=run_worker, args=(config, creds, urls, lock))
+            worker_processes.append(worker_proc)
+            worker_proc.start()
+        fetch_proc.start()
+
+        # wait for the processes to finish
+        for p in worker_processes:
+            p.join()
+        fetch_proc.join()
 
 
 if __name__ == '__main__':
-    run_mode = "prod"
-    options = ["default", "error"]
-    db_uri = "sqlite:///database_sqlite/database.db"
-    processes = []
-    for option in options:
-        p = Process(target=run_axiom_driver, args=(db_uri, run_mode, option))
-        processes.append(p)
-        p.start()
-
-    # Wait for all processes to complete
-    for p in processes:
-        p.join()
+    num_processes = 1
+    configuration = {
+        "environment mode": "prod",  # "prod" or "test"
+        "issue type": "default",  # "default" or "error"
+        "record type": "prospects",  # "prospects" or "act"
+        "database uri": "sqlite:///database_sqlite/database.db"
+    }
+    atexit.register(print_db_stats, configuration)
+    main(num_processes, configuration)
