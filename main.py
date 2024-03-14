@@ -2,14 +2,8 @@ from browser_control.axiom_fetcher import AxiomFetcher
 from browser_control.axiom_worker import AxiomWorker
 from database_sqlite.database import DatabaseManager
 
-from multiprocessing import Process, Manager, Lock
+from multiprocessing import Process, Manager, Lock, Event
 import atexit
-
-REC_TYPES = {
-    "prospects": 601,
-    "act": 361,
-    # add other record types here as needed
-}
 
 
 def wrapup_db(config: dict):
@@ -24,21 +18,7 @@ def wrapup_db(config: dict):
     db_manager.print_stats()
 
 
-def run_fetcher(config: dict, credentials: dict,
-                shared_urls: list, lock_obj: Lock):
-    """
-    Run the AxiomFetcher in a separate process
-    :param config: dictionary of configuration options
-    :param credentials: dictionary of credentials
-    :param shared_urls: list of urls to process
-    :param lock_obj: lock_obj for the shared_urls list
-    :return: None
-    """
-    AxiomFetcher(config, credentials, shared_urls, lock_obj)
-
-
-def run_worker(config: dict, credentials: dict,
-               shared_urls: list, lock_obj: Lock):
+def run_fetcher(config: dict, credentials: dict, event_signal: Event):
     """
     Run the AxiomFetcher in a separate process
     :param config: dictionary of configuration options
@@ -49,7 +29,21 @@ def run_worker(config: dict, credentials: dict,
     """
     uri = config["database uri"]
     db_manager = DatabaseManager(uri)
-    AxiomWorker(db_manager, credentials, shared_urls, lock_obj)
+    AxiomFetcher(db_manager, config, credentials, event_signal)
+
+
+def run_worker(config: dict, credentials: dict):
+    """
+    Run the AxiomFetcher in a separate process
+    :param config: dictionary of configuration options
+    :param credentials: dictionary of credentials
+    :param shared_urls: list of urls to process
+    :param lock_obj: lock_obj for the shared_urls list
+    :return: None
+    """
+    uri = config["database uri"]
+    db_manager = DatabaseManager(uri)
+    AxiomWorker(db_manager, config, credentials)
 
 
 def main(num_proc: int, config: dict):
@@ -59,15 +53,17 @@ def main(num_proc: int, config: dict):
     """
     num_proc = max(1, min(10, num_proc))
     with Manager() as manager:
-        urls = manager.list()
         creds = manager.dict()
-        lock = Lock()
-        fetch_proc = Process(target=run_fetcher, args=(config, creds, urls, lock))
+        event = Event()
+        fetch_proc = Process(target=run_fetcher,
+                             args=(config, creds, event))
+        fetch_proc.start()
 
         # start the processes
         worker_processes = []
         for _ in range(num_proc):
-            worker_proc = Process(target=run_worker, args=(config, creds, urls, lock))
+            worker_proc = Process(target=run_worker,
+                                  args=(config, creds))
             worker_processes.append(worker_proc)
             worker_proc.start()
         fetch_proc.start()
