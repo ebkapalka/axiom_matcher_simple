@@ -2,7 +2,7 @@ from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy import create_engine, func, event
 from datetime import timedelta
 
-from database_sqlite.models import Base, AxiomEvent
+from database_sqlite.models import Base, AxiomEvent, URL
 
 
 class DatabaseManager:
@@ -44,6 +44,63 @@ class DatabaseManager:
             new_event = AxiomEvent(event_type=event_type)
             session.add(new_event)
             session.commit()
+
+    def check_out_url(self) -> URL:
+        """
+        Atomically check out a URL that hasn't been checked out or processed.
+        :return: URL object or None if no URL is available.
+        """
+        session = self.get_session()
+        try:
+            # Start a transaction
+            session.begin()
+            url = session.query(URL).filter_by(is_checked_out=False, is_processed=False).with_for_update().first()
+            if url:
+                url.is_checked_out = True
+                session.commit()  # Commit the transaction
+                return url
+        except Exception as e:
+            session.rollback()  # Ensure to rollback in case of any exception
+            print(f"Error checking out URL: {e}")
+        finally:
+            session.close()  # Ensure the session is closed after operation
+        return None
+
+    def mark_url_as_processed(self, url_str: str):
+        """
+        Mark a URL as processed and no longer checked out.
+        :param url_str: The URL string to mark as processed.
+        :return: None
+        """
+        session = self.get_session()
+        try:
+            session.begin()
+            url_obj = session.query(URL).filter_by(url=url_str).one()
+            url_obj.is_processed = True
+            url_obj.is_checked_out = False
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            print(f"Error marking URL as processed: {e}")
+        finally:
+            session.close()
+
+    def reset_checked_out_urls(self):
+        """
+        Reset the is_checked_out flag for all URLs, marking them as not checked out.
+        This is useful for cleanup purposes, e.g., at startup or shutdown.
+        """
+        session = self.get_session()
+        try:
+            session.begin()
+            # Update all rows where is_checked_out is True
+            session.query(URL).filter_by(is_checked_out=True).update({"is_checked_out": False})
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            print(f"Error resetting checked out URLs: {e}")
+        finally:
+            session.close()
 
     def print_stats(self, time_thresh=timedelta(minutes=1)):
         """
