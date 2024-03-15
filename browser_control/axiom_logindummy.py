@@ -2,51 +2,14 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium import webdriver
-from getpass import getpass
-import sys
 
-# Constants
-LOGIN_TIMEOUT = 5
-RECORD_TYPES = {
-    "prospects": 601,
-    "act": 361,
-    # add other record types here as needed
-}
-
-
-def validate_config(config: dict) -> None:
-    """
-    Validate the configuration
-    :param config: configuration dictionary
-    :return: None
-    """
-    if config.get("environment mode") not in ["test", "prod"]:
-        print("Invalid run mode")
-        sys.exit(1)
-    if config.get("record type") not in RECORD_TYPES:
-        print("Invalid record type")
-        sys.exit(1)
-
-
-def prompt_credentials() -> tuple[str, str]:
-    """
-    Prompt the user for their Axiom credentials
-    :return: tuple of username and password
-    """
-    username = input("Enter your Axiom username: ").strip()
-    password = getpass("Enter your Axiom password: ").strip()
-    return username, password
+from browser_utilities.general_utils import (generate_urls,
+                                             prompt_credentials)
 
 
 class AxiomDummy:
     def __init__(self, config: dict):
-        validate_config(config)
-        mode = config['environment mode']
-        record_type_id = RECORD_TYPES[config['record type']]
-        self.base_url = (f"https://axiom-elite-{mode}.msu.montana.edu/"
-                         f"RecordManager.aspx?SourceID={record_type_id}")
-        self.login_url = (f"https://axiom-elite-{mode}.msu.montana.edu/"
-                          f"Login.aspx")
+        self.login_url = generate_urls(config)[2]
         self.credentials = {}
 
     def perform_login(self) -> None:
@@ -59,7 +22,7 @@ class AxiomDummy:
         self.handle_two_factor_authentication()
         print("Axiom Login Successful")
 
-    def handle_login(self, timeout=LOGIN_TIMEOUT) -> None:
+    def handle_login(self, timeout=5) -> None:
         """
         Handle the login process
         :param timeout: time to wait
@@ -96,7 +59,7 @@ class AxiomDummy:
         input_password.send_keys(password)
         self.driver.find_element(By.ID, "Login").click()
 
-    def handle_two_factor_authentication(self, timeout=LOGIN_TIMEOUT) -> None:
+    def handle_two_factor_authentication(self, timeout=5) -> None:
         """
         Handle two-factor authentication
         :param timeout: time to wait
