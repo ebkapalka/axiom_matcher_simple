@@ -6,6 +6,8 @@ from database_sqlite.database import DatabaseManager
 from multiprocessing import Process
 import atexit
 
+MAX_WORKERS = 12
+
 
 def wrapup_db(config: dict):
     """
@@ -32,7 +34,7 @@ def run_fetcher(config: dict, credentials: dict):
     AxiomFetcher(db_manager, config, credentials)
 
 
-def run_worker(config: dict, credentials: dict):
+def run_worker(config: dict, credentials: dict, worker_id: str):
     """
     Run the AxiomFetcher in a separate process
     :param config: dictionary of configuration options
@@ -43,7 +45,8 @@ def run_worker(config: dict, credentials: dict):
     """
     uri = config["database uri"]
     db_manager = DatabaseManager(uri)
-    AxiomWorker(db_manager, config, credentials)
+    worker_name = f"Worker - {worker_id}"
+    AxiomWorker(db_manager, config, credentials, worker_name)
 
 
 def main(num_proc: int, config: dict):
@@ -51,16 +54,18 @@ def main(num_proc: int, config: dict):
     Main function
     :return: None
     """
-    num_proc = max(1, min(10, num_proc))
+    if isinstance(config["issue types"], str):
+        config["issue types"] = [config["issue types"]]
+    num_proc = max(1, min(MAX_WORKERS, num_proc))
     cred_getter = AxiomDummy(config)
     creds = cred_getter.get_credentials()
     fetch_proc = Process(target=run_fetcher,args=(config, creds))
 
     # start the processes
     worker_processes = []
-    for _ in range(num_proc):
+    for worker_id in range(num_proc):
         worker_proc = Process(target=run_worker,
-                              args=(config, creds))
+                              args=(config, creds, worker_id))
         worker_processes.append(worker_proc)
         worker_proc.start()
     fetch_proc.start()
@@ -72,10 +77,10 @@ def main(num_proc: int, config: dict):
 
 
 if __name__ == '__main__':
-    num_processes = 10
+    num_processes = 0
     configuration = {
         "environment mode": "prod",  # "prod" or "test"
-        "issue type": "default",  # "default" or "error"
+        "issue types": ["verify", "error"],  # "verify" or "error"
         "record type": "prospects",  # "prospects" or "act"
         "database uri": "sqlite:///database_sqlite/database.db"
     }
