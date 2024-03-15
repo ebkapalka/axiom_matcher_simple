@@ -45,30 +45,52 @@ class DatabaseManager:
             session.add(new_event)
             session.commit()
 
-    def check_out_url(self) -> URL:
+    def bulk_add_urls(self, url_list):
         """
-        Atomically check out a URL that hasn't been checked out or processed.
+        Bulk add URLs to the database, skipping URLs that already exist.
+        :param url_list: A list of URL strings to be added.
+        """
+        session = self.get_session()
+        try:
+            existing_urls = session.query(URL.url).filter(URL.url.in_(url_list)).all()
+            existing_urls_set = {url[0] for url in existing_urls}
+            new_urls = [URL(url=url) for url in url_list if url not in existing_urls_set]
+            if new_urls:
+                session.add_all(new_urls)
+                session.commit()
+        except Exception as e:
+            session.rollback()
+            print(f"Error adding URLs: {e}")
+        finally:
+            session.close()
+
+    def check_out_url(self, worker_id: str) -> URL:
+        """
+        Atomically check out a URL that hasn't been checked out or processed,
+        assigning it to the specified worker.
+        :param worker_id: The identifier of the worker checking out the URL.
         :return: URL object or None if no URL is available.
         """
         session = self.get_session()
         try:
-            # Start a transaction
             session.begin()
-            url = session.query(URL).filter_by(is_checked_out=False, is_processed=False).with_for_update().first()
+            url = session.query(URL).filter_by(checked_out_by=None,
+                                               is_processed=False).first()
             if url:
-                url.is_checked_out = True
-                session.commit()  # Commit the transaction
+                url.checked_out_by = worker_id
+                session.commit()
                 return url
         except Exception as e:
-            session.rollback()  # Ensure to rollback in case of any exception
+            session.rollback()
             print(type(e), e)
         finally:
-            session.close()  # Ensure the session is closed after operation
+            session.close()
         return None
+
 
     def mark_url_as_processed(self, url_str: str):
         """
-        Mark a URL as processed and no longer checked out.
+        Mark a URL as processed, clearing the worker assignment.
         :param url_str: The URL string to mark as processed.
         :return: None
         """
@@ -77,7 +99,7 @@ class DatabaseManager:
             session.begin()
             url_obj = session.query(URL).filter_by(url=url_str).one()
             url_obj.is_processed = True
-            url_obj.is_checked_out = False
+            url_obj.checked_out_by = None
             session.commit()
         except Exception as e:
             session.rollback()
@@ -87,14 +109,14 @@ class DatabaseManager:
 
     def reset_checked_out_urls(self):
         """
-        Reset the is_checked_out flag for all URLs, marking them as not checked out.
+        Reset the checked_out_by field for all URLs, marking them as not checked out.
         This is useful for cleanup purposes, e.g., at startup or shutdown.
         """
         session = self.get_session()
         try:
             session.begin()
-            # Update all rows where is_checked_out is True
-            session.query(URL).filter_by(is_checked_out=True).update({"is_checked_out": False})
+            # Correctly use SQLAlchemy's not_() function for NULL comparison
+            session.query(URL).filter(URL.checked_out_by.is_not(None)).update({"checked_out_by": None})
             session.commit()
         except Exception as e:
             session.rollback()
