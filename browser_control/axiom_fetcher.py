@@ -2,11 +2,10 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium import webdriver
+import time
 import sys
 
-from browser_utilities.navigate_verifier import identify_page, goto_verifier
-from matching_utilities.match_handler import handle_match_dialogue
-from browser_utilities.await_loading import wait_for_loading
+from browser_utilities.navigate_verifier import identify_page
 from database_sqlite.database import DatabaseManager
 
 REC_TYPES = {
@@ -15,35 +14,59 @@ REC_TYPES = {
     # add other record types here as needed
 }
 
+
 class AxiomFetcher:
     def __init__(self, database: DatabaseManager, config: dict, credentials: dict):
         run_mode = config["environment mode"]
-        if run_mode == "test":
-            self.base_url = "https://axiom-elite-test.msu.montana.edu/"
-        elif run_mode == "prod":
-            self.base_url = "https://axiom-elite-prod.msu.montana.edu/"
-        else:
+        if run_mode not in ["test", "prod"]:
             print("Invalid run mode")
             sys.exit()
+        source_id = REC_TYPES[config["record type"]]
+        self.base_url = (f"https://axiom-elite-{run_mode}.msu.montana.edu"
+                         f"/RecordManager.aspx?SourceID={source_id}")
+        self.login_url = (f"https://axiom-elite-{run_mode}.msu.montana.edu"
+                          f"/Login.aspx")
 
+        self.credentials = credentials
+        self.option = config["issue type"]
         self.driver = webdriver.Chrome()
         self.database = database
-        self.option = config["issue type"]
-        self.await_login()
-        goto_verifier(self.driver,
-                      self.base_url,
-                      self.option)
+        self.perform_login()
         self.main_loop()
 
-    def await_login(self):
+    def perform_login(self, timeout=5):
         """
         Wait for user to log into Axiom
         :return: None
         """
-        print("Please log into Axiom")
-        self.driver.get(self.base_url)
-        WebDriverWait(self.driver, 300).until(EC.title_is("Axiom Elite - Dashboard"))
-        print("Axiom Login Successful")
+        self.driver.get(self.login_url)
+        button_login = WebDriverWait(self.driver, timeout).until(
+            EC.element_to_be_clickable((By.ID, "Login")))
+        input_username = WebDriverWait(self.driver, timeout).until(
+            EC.presence_of_element_located((By.ID, "UserName")))
+        input_password = WebDriverWait(self.driver, timeout).until(
+            EC.presence_of_element_located((By.ID, "Password")))
+        input_username.send_keys(self.credentials["username"])
+        input_password.send_keys(self.credentials["password"])
+        button_login.click()
+
+        # handle entering verification code
+        button_validate = WebDriverWait(self.driver, timeout).until(
+            EC.element_to_be_clickable((By.ID, "ValidateBtn")))
+        input_verification = WebDriverWait(self.driver, timeout).until(
+            EC.presence_of_element_located((By.ID, "SecurityPin")))
+        input_verification.send_keys(self.credentials["verification"])
+        button_validate.click()
+
+        # verify login
+        try:
+            WebDriverWait(self.driver, timeout).until(
+                EC.title_is("Axiom Elite - Dashboard"))
+            print("Fetcher Login Successful")
+            return
+        except:
+            print("Invalid verification code")
+            sys.exit()
 
     def main_loop(self):
         """
@@ -51,19 +74,3 @@ class AxiomFetcher:
         :return: None
         """
         ...
-        # while True:
-        #     wait_for_loading(self.driver)
-        #     WebDriverWait(self.driver, 30).until(
-        #         EC.visibility_of_element_located((By.ID, "VerifyRecordViewPort")))
-        #     page = identify_page(self.driver)
-        #     if page == "finished":
-        #         return
-        #     elif page in HANDLERS:
-        #         result = HANDLERS[page](self.driver)
-        #         if page.startswith("error"):
-        #             self.database.add_event(page)
-        #         if result:
-        #             self.database.add_event(result)
-        #     else:
-        #         print(f"Unknown page: {page}")
-        #         input("Press Enter to continue")
