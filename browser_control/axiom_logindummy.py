@@ -39,7 +39,7 @@ def prompt_credentials() -> tuple[str, str]:
 
 
 class AxiomDummy:
-    def __init__(self, config: dict, credentials: dict):
+    def __init__(self, config: dict):
         validate_config(config)
         mode = config['environment mode']
         record_type_id = RECORD_TYPES[config['record type']]
@@ -47,12 +47,7 @@ class AxiomDummy:
                          f"RecordManager.aspx?SourceID={record_type_id}")
         self.login_url = (f"https://axiom-elite-{mode}.msu.montana.edu/"
                           f"Login.aspx")
-        self.credentials = credentials
-        options = webdriver.ChromeOptions()
-        options.add_argument('--headless')
-        self.driver = webdriver.Chrome(options=options)
-        self.perform_login()
-        self.driver.quit()
+        self.credentials = {}
 
     def perform_login(self) -> None:
         """
@@ -144,3 +139,15 @@ class AxiomDummy:
             return True
         except:
             return False
+
+    def get_credentials(self):
+        """
+        Get the credentials
+        :return:
+        """
+        options = webdriver.ChromeOptions()
+        options.add_argument('--headless')
+        self.driver = webdriver.Chrome(options=options)
+        self.perform_login()
+        self.driver.quit()
+        return self.credentials
