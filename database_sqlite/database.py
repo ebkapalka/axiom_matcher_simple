@@ -61,7 +61,7 @@ class DatabaseManager:
                 return url
         except Exception as e:
             session.rollback()  # Ensure to rollback in case of any exception
-            print(f"Error checking out URL: {e}")
+            print(type(e), e)
         finally:
             session.close()  # Ensure the session is closed after operation
         return None
