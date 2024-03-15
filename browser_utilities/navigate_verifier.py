@@ -10,6 +10,44 @@ import sys
 from browser_utilities.await_loading import wait_for_loading
 
 
+def perform_login(driver: webdriver, login_url: str, credentials: dict, timeout=5) -> None:
+    """
+    Log into Axiom with the given credentials
+    :param driver: webdriver
+    :param login_url: url to login page
+    :param credentials: dictionary of credentials
+    :param timeout: time to wait for the elements
+    :return: None
+    """
+    driver.get(login_url)
+    button_login = WebDriverWait(driver, timeout).until(
+        EC.element_to_be_clickable((By.ID, "Login")))
+    input_username = WebDriverWait(driver, timeout).until(
+        EC.presence_of_element_located((By.ID, "UserName")))
+    input_password = WebDriverWait(driver, timeout).until(
+        EC.presence_of_element_located((By.ID, "Password")))
+    input_username.send_keys(credentials["username"])
+    input_password.send_keys(credentials["password"])
+    button_login.click()
+
+    # handle entering verification code
+    button_validate = WebDriverWait(driver, timeout).until(
+        EC.element_to_be_clickable((By.ID, "ValidateBtn")))
+    input_verification = WebDriverWait(driver, timeout).until(
+        EC.presence_of_element_located((By.ID, "SecurityPin")))
+    input_verification.send_keys(credentials["verification"])
+    button_validate.click()
+
+    # verify login
+    try:
+        WebDriverWait(driver, timeout).until(
+            EC.title_is("Axiom Elite - Dashboard"))
+        return
+    except Exception as e:
+        print(type(e), e)
+        sys.exit()
+
+
 def identify_page(driver: webdriver) -> str:
     """
     Identify the current page
