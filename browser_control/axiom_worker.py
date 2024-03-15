@@ -9,8 +9,9 @@ import sys
 from browser_utilities.case_handlers import (handle_normal, handle_bad_ceeb, handle_bad_address,
                                              handle_bad_firstname, handle_bad_lastname,
                                              handle_bad_city, handle_bad_zip, handle_bad_state)
+from browser_utilities.general_utils import generate_urls
 from matching_utilities.match_handler import handle_match_dialogue
-from browser_utilities.navigate_verifier import identify_page
+from browser_utilities.navigate_verifier import identify_page, perform_login
 from browser_utilities.await_loading import wait_for_loading
 from database_sqlite.database import DatabaseManager
 
@@ -31,55 +32,19 @@ HANDLERS = {
 
 
 class AxiomWorker:
-    def __init__(self, database: DatabaseManager, config: dict, credentials: dict):
-        run_mode = config["environment mode"]
-        if run_mode not in ["test", "prod"]:
-            print("Invalid run mode")
-            sys.exit()
-        self.login_url = (f"https://axiom-elite-{run_mode}"
-                          f".msu.montana.edu/Login.aspx")
-
+    def __init__(self, database: DatabaseManager, config: dict, credentials: dict, identifier: str):
+        self.manager_url, self.verifier_url, self.login_url = generate_urls(config)
         self.credentials = credentials
+        self.identifier = identifier
         options = webdriver.ChromeOptions()
         options.add_argument('--headless')
         self.driver = webdriver.Chrome(options=options)
         self.database = database
-        self.perform_login()
+        perform_login(self.driver,
+                      self.login_url,
+                      self.credentials)
+        print("Worker login successful")
         self.main_loop()
-
-    def perform_login(self, timeout=5):
-        """
-        Wait for user to log into Axiom
-        :return: None
-        """
-        self.driver.get(self.login_url)
-        button_login = WebDriverWait(self.driver, timeout).until(
-            EC.element_to_be_clickable((By.ID, "Login")))
-        input_username = WebDriverWait(self.driver, timeout).until(
-            EC.presence_of_element_located((By.ID, "UserName")))
-        input_password = WebDriverWait(self.driver, timeout).until(
-            EC.presence_of_element_located((By.ID, "Password")))
-        input_username.send_keys(self.credentials["username"])
-        input_password.send_keys(self.credentials["password"])
-        button_login.click()
-
-        # handle entering verification code
-        button_validate = WebDriverWait(self.driver, timeout).until(
-            EC.element_to_be_clickable((By.ID, "ValidateBtn")))
-        input_verification = WebDriverWait(self.driver, timeout).until(
-            EC.presence_of_element_located((By.ID, "SecurityPin")))
-        input_verification.send_keys(self.credentials["verification"])
-        button_validate.click()
-
-        # verify login
-        try:
-            WebDriverWait(self.driver, timeout).until(
-                EC.title_is("Axiom Elite - Dashboard"))
-            print("Worker Login Successful")
-            return
-        except:
-            print("Invalid verification code")
-            sys.exit()
 
     def main_loop(self):
         """
@@ -89,7 +54,7 @@ class AxiomWorker:
         ...
         # while True:
         #     # check out a URL from the database
-        #     url = self.database.check_out_url()
+        #     url = self.database.check_out_url(self.identifier)
         #     while not url:
         #         time.sleep(random.uniform(1, 2))
         #         url = self.database.check_out_url()
