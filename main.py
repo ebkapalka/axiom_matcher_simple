@@ -3,7 +3,7 @@ from browser_control.axiom_logindummy import AxiomDummy
 from browser_control.axiom_worker import AxiomWorker
 from database_sqlite.database import DatabaseManager
 
-from multiprocessing import Process, Manager, Lock, Event
+from multiprocessing import Process
 import atexit
 
 
@@ -19,7 +19,7 @@ def wrapup_db(config: dict):
     db_manager.print_stats()
 
 
-def run_fetcher(config: dict, credentials: dict, event_signal: Event):
+def run_fetcher(config: dict, credentials: dict):
     """
     Run the AxiomFetcher in a separate process
     :param config: dictionary of configuration options
@@ -52,32 +52,27 @@ def main(num_proc: int, config: dict):
     :return: None
     """
     num_proc = max(1, min(10, num_proc))
-    with Manager() as manager:
-        creds = manager.dict()
-        event = Event()
+    cred_getter = AxiomDummy(config)
+    creds = cred_getter.get_credentials()
+    fetch_proc = Process(target=run_fetcher,args=(config, creds))
 
-        AxiomDummy(config, creds)
-        print(creds)
-        # fetch_proc = Process(target=run_fetcher,
-        #                      args=(config, creds, event))
-        # fetch_proc.start()
-        # start the processes
-        # worker_processes = []
-        # for _ in range(num_proc):
-        #     worker_proc = Process(target=run_worker,
-        #                           args=(config, creds))
-        #     worker_processes.append(worker_proc)
-        #     worker_proc.start()
-        # fetch_proc.start()
-        #
-        # # wait for the processes to finish
-        # for p in worker_processes:
-        #     p.join()
-        # fetch_proc.join()
+    # start the processes
+    worker_processes = []
+    for _ in range(num_proc):
+        worker_proc = Process(target=run_worker,
+                              args=(config, creds))
+        worker_processes.append(worker_proc)
+        worker_proc.start()
+    fetch_proc.start()
+
+    # wait for the processes to finish
+    for p in worker_processes:
+        p.join()
+    fetch_proc.join()
 
 
 if __name__ == '__main__':
-    num_processes = 1
+    num_processes = 10
     configuration = {
         "environment mode": "prod",  # "prod" or "test"
         "issue type": "default",  # "default" or "error"
