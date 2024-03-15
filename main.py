@@ -1,4 +1,5 @@
 from browser_control.axiom_fetcher import AxiomFetcher
+from browser_control.axiom_logindummy import AxiomDummy
 from browser_control.axiom_worker import AxiomWorker
 from database_sqlite.database import DatabaseManager
 
@@ -23,13 +24,12 @@ def run_fetcher(config: dict, credentials: dict, event_signal: Event):
     Run the AxiomFetcher in a separate process
     :param config: dictionary of configuration options
     :param credentials: dictionary of credentials
-    :param shared_urls: list of urls to process
-    :param lock_obj: lock_obj for the shared_urls list
+    :param event_signal: Event signal to start other processes
     :return: None
     """
     uri = config["database uri"]
     db_manager = DatabaseManager(uri)
-    AxiomFetcher(db_manager, config, credentials, event_signal)
+    AxiomFetcher(db_manager, config, credentials)
 
 
 def run_worker(config: dict, credentials: dict):
@@ -55,23 +55,25 @@ def main(num_proc: int, config: dict):
     with Manager() as manager:
         creds = manager.dict()
         event = Event()
-        fetch_proc = Process(target=run_fetcher,
-                             args=(config, creds, event))
-        fetch_proc.start()
 
+        AxiomDummy(config, creds)
+        print(creds)
+        # fetch_proc = Process(target=run_fetcher,
+        #                      args=(config, creds, event))
+        # fetch_proc.start()
         # start the processes
-        worker_processes = []
-        for _ in range(num_proc):
-            worker_proc = Process(target=run_worker,
-                                  args=(config, creds))
-            worker_processes.append(worker_proc)
-            worker_proc.start()
-        fetch_proc.start()
-
-        # wait for the processes to finish
-        for p in worker_processes:
-            p.join()
-        fetch_proc.join()
+        # worker_processes = []
+        # for _ in range(num_proc):
+        #     worker_proc = Process(target=run_worker,
+        #                           args=(config, creds))
+        #     worker_processes.append(worker_proc)
+        #     worker_proc.start()
+        # fetch_proc.start()
+        #
+        # # wait for the processes to finish
+        # for p in worker_processes:
+        #     p.join()
+        # fetch_proc.join()
 
 
 if __name__ == '__main__':
