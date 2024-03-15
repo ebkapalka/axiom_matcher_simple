@@ -1,3 +1,4 @@
+from selenium.webdriver import ActionChains
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
@@ -5,72 +6,70 @@ from selenium import webdriver
 import time
 import sys
 
-from browser_utilities.navigate_verifier import identify_page
+from browser_utilities.await_loading import wait_for_loading
+from browser_utilities.general_utils import generate_urls
+from browser_utilities.navigate_verifier import perform_login
 from database_sqlite.database import DatabaseManager
 
-REC_TYPES = {
-    "prospects": 601,
-    "act": 361,
-    # add other record types here as needed
-}
+
 
 
 class AxiomFetcher:
     def __init__(self, database: DatabaseManager, config: dict, credentials: dict):
-        run_mode = config["environment mode"]
-        if run_mode not in ["test", "prod"]:
-            print("Invalid run mode")
-            sys.exit()
-        source_id = REC_TYPES[config["record type"]]
-        self.base_url = (f"https://axiom-elite-{run_mode}.msu.montana.edu"
-                         f"/RecordManager.aspx?SourceID={source_id}")
-        self.login_url = (f"https://axiom-elite-{run_mode}.msu.montana.edu"
-                          f"/Login.aspx")
-
+        self.manager_url, self.verifier_url, self.login_url = (generate_urls(config))
         self.credentials = credentials
-        self.option = config["issue type"]
+        self.options = config["issue types"]
         self.driver = webdriver.Chrome()
+        self.actions = ActionChains(self.driver)
+        self.driver.maximize_window()
         self.database = database
-        self.perform_login()
+        perform_login(self.driver,
+                      self.login_url,
+                      self.credentials)
+        print("Fetcher login successful")
+        self.goto_record_manager()
         self.main_loop()
 
-    def perform_login(self, timeout=5):
-        """
-        Wait for user to log into Axiom
-        :return: None
-        """
-        self.driver.get(self.login_url)
-        button_login = WebDriverWait(self.driver, timeout).until(
-            EC.element_to_be_clickable((By.ID, "Login")))
-        input_username = WebDriverWait(self.driver, timeout).until(
-            EC.presence_of_element_located((By.ID, "UserName")))
-        input_password = WebDriverWait(self.driver, timeout).until(
-            EC.presence_of_element_located((By.ID, "Password")))
-        input_username.send_keys(self.credentials["username"])
-        input_password.send_keys(self.credentials["password"])
-        button_login.click()
+    def goto_record_manager(self):
+        self.driver.get(self.manager_url)
+        # make the advanced options visible
+        input_status = WebDriverWait(self.driver, 5).until(
+            EC.presence_of_element_located((By.ID, "react-select-3-input")))
+        while not input_status.is_displayed():
+            button_options = WebDriverWait(self.driver, 5).until(
+                EC.element_to_be_clickable((By.ID, "ToggleAdvancedOptions")))
+            button_options.click()
+            time.sleep(.1)
 
-        # handle entering verification code
-        button_validate = WebDriverWait(self.driver, timeout).until(
-            EC.element_to_be_clickable((By.ID, "ValidateBtn")))
-        input_verification = WebDriverWait(self.driver, timeout).until(
-            EC.presence_of_element_located((By.ID, "SecurityPin")))
-        input_verification.send_keys(self.credentials["verification"])
-        button_validate.click()
+        # set the status options
+        for status in self.options:
+            input_status.send_keys(f"{status}\n")
 
-        # verify login
-        try:
-            WebDriverWait(self.driver, timeout).until(
-                EC.title_is("Axiom Elite - Dashboard"))
-            print("Fetcher Login Successful")
-            return
-        except:
-            print("Invalid verification code")
-            sys.exit()
+        # click the search button
+        WebDriverWait(self.driver, 5).until(
+            EC.element_to_be_clickable((By.ID, "SearchButton"))).click()
 
     def main_loop(self):
         """
         Main logic loop
         :return: None
         """
-        ...
+        while True:
+            wait_for_loading(self.driver)
+            page_urls = []
+            rows = WebDriverWait(self.driver, 5).until(
+                EC.presence_of_all_elements_located((By.CLASS_NAME, "rdt_TableRow")))
+            for row in rows:
+                cols = row.find_elements(By.CLASS_NAME, "rdt_TableCell")
+                page_urls.append(f"{self.verifier_url}{cols[2].text}")
+            self.database.bulk_add_urls(page_urls)
+
+            nav_box = WebDriverWait(self.driver, 5).until(
+                EC.presence_of_element_located((By.CLASS_NAME, "rdt_Pagination")))
+            button_next = nav_box.find_element(By.ID, "pagination-next-page")
+            span_stats = nav_box.find_element(By.XPATH, ".//span[1]").text
+            self.actions.move_to_element(button_next).perform()
+            WebDriverWait(self.driver, 5).until(
+                EC.element_to_be_clickable((By.ID, "pagination-next-page")))
+            print(span_stats)
+            button_next.click()
