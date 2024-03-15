@@ -17,6 +17,8 @@ def wait_for_loading(driver: webdriver, timeout=300):
     WebDriverWait(driver, timeout).until(
         EC.invisibility_of_element_located((By.CLASS_NAME, "progress-bar")))
     WebDriverWait(driver, timeout).until(
+        EC.invisibility_of_element_located((By.CLASS_NAME, "knyrie")))
+    WebDriverWait(driver, timeout).until(
         EC.invisibility_of_element_located((By.ID, "fullpage-overlay")))
     WebDriverWait(driver, timeout).until(
         lambda d: _class_no_longer_present(d, (By.CSS_SELECTOR, "input.updating")))
