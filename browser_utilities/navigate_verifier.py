@@ -75,6 +75,13 @@ def identify_page(driver: webdriver) -> str:
     if page_title == "Axiom Elite - Dashboard":
         return "dashboard"
 
+    # check for lock expired popup
+    try:
+        WebDriverWait(driver, 5).until(
+            EC.invisibility_of_element_located((By.XPATH, "//h2[text()='Lock Expired']")))
+    except:
+        return "lock expired"
+
     # check for the match dialogue
     try:
         match_dialogue = driver.find_element(By.CLASS_NAME, "bs-matchstatus-modal")
