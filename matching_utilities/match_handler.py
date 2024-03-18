@@ -17,6 +17,21 @@ def handle_match_dialogue(driver: webdriver) -> str:
     :param driver: Instance of webdriver to interact with the browser.
     :return: Dictionary mapping table column headers to the values of the first row.
     """
+    def element_has_non_null_text(xpath: str, parent_element: WebElement) -> WebElement | bool:
+        """
+        Check if an element has non-null text
+        :param xpath: xpath of the element relative to the parent
+        :param parent_element: parent element to start the search
+        :return:
+        """
+        try:
+            element = parent_element.find_element(By.XPATH, xpath)
+            if element.text != "":
+                return element
+        except:
+            pass
+        return False
+
     match_table = WebDriverWait(driver, 30).until(
         EC.presence_of_element_located((By.ID, "MatchListTable")))
     records = match_table.find_elements(By.XPATH, "./tbody/tr")
@@ -33,6 +48,8 @@ def handle_match_dialogue(driver: webdriver) -> str:
         # extract the values for the potential match
         potential_match = {}
         for row in rows:
+            WebDriverWait(driver, 10).until(
+                lambda _: element_has_non_null_text("./td[1]", row))
             potential_match[row.find_element(By.XPATH, "./td[1]").text] = (
                 row.find_element(By.XPATH, "./td[3]").text)
         potential_match["element"] = record
