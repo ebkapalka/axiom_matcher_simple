@@ -26,7 +26,6 @@ def run_fetcher(config: dict, credentials: dict):
     Run the AxiomFetcher in a separate process
     :param config: dictionary of configuration options
     :param credentials: dictionary of credentials
-    :param event_signal: Event signal to start other processes
     :return: None
     """
     uri = config["database uri"]
@@ -39,8 +38,7 @@ def run_worker(config: dict, credentials: dict, worker_id: str):
     Run the AxiomFetcher in a separate process
     :param config: dictionary of configuration options
     :param credentials: dictionary of credentials
-    :param shared_urls: list of urls to process
-    :param lock_obj: lock_obj for the shared_urls list
+    :param worker_id: identifier for the worker
     :return: None
     """
     uri = config["database uri"]
@@ -81,7 +79,7 @@ def main(num_proc: int, config: dict):
 
 
 if __name__ == '__main__':
-    num_processes = 10
+    num_processes = 8
     configuration = {
         "environment mode": "prod",  # "prod" or "test"
         "issue types": ["verify", "error"],  # "verify" or "error"
