@@ -32,12 +32,15 @@ HANDLERS = {
 
 
 class AxiomWorker:
+    """
+    AxiomWorker class
+    """
     def __init__(self, database: DatabaseManager, config: dict, credentials: dict, identifier: str):
         self.manager_url, self.verifier_url, self.login_url = generate_urls(config)
         self.credentials = credentials
         self.identifier = identifier
         options = webdriver.ChromeOptions()
-        options.add_argument('--headless')
+        # options.add_argument('--headless')
         self.driver = webdriver.Chrome(options=options)
         self.database = database
         perform_login(self.driver,
@@ -59,26 +62,28 @@ class AxiomWorker:
                 time.sleep(random.uniform(1, 2))
                 url = self.database.check_out_url()
             print(f"{self.identifier} processing {url}")
-            time.sleep(random.uniform(1, 20))
-            self.database.mark_url_as_processed(url)
 
-        #
-        #     # navigate to the URL
-        #     self.driver.get(url.url)
-        #     wait_for_loading(self.driver)
-        #     WebDriverWait(self.driver, 30).until(
-        #         EC.visibility_of_element_located((By.ID, "VerifyRecordViewPort")))
-        #
-        #     # handle the page
-        #     page = identify_page(self.driver)
-        #     if page == "finished":
-        #         return
-        #     elif page in HANDLERS:
-        #         result = HANDLERS[page](self.driver)
-        #         if page.startswith("error"):
-        #             self.database.add_event(page)
-        #         if result:
-        #             self.database.add_event(result)
-        #     else:
-        #         print(f"Unknown page: {page}")
-        #         time.sleep(100000000)
+            # navigate to the URL
+            self.driver.get(url)
+            wait_for_loading(self.driver)
+            WebDriverWait(self.driver, 30).until(
+                EC.visibility_of_element_located((By.ID, "ModalOverlayArea")))
+
+            # identify the page and handle it
+            page = identify_page(self.driver)
+            wait_for_loading(self.driver)
+            while page != "dashboard":
+                if page in HANDLERS:
+                    result = HANDLERS[page](self.driver)
+                    if page.startswith("error"):
+                        self.database.add_event(page)
+                    if result:
+                        self.database.add_event(result)
+                else:
+                    print(f"Unknown page: {page}")
+                    time.sleep(100000000)
+                wait_for_loading(self.driver)
+                page = identify_page(self.driver)
+
+            self.database.mark_url_as_processed(url)
+            # time.sleep(10)
