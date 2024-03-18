@@ -1,5 +1,6 @@
+import pwinput
 import sys
-from getpass import getpass
+
 
 REC_TYPES = {
     "prospects": 601,
@@ -42,5 +43,6 @@ def prompt_credentials() -> tuple[str, str]:
     :return: tuple of username and password
     """
     username = input("Enter your Axiom username: ").strip()
-    password = getpass("Enter your Axiom password: ").strip()
+    password = pwinput.pwinput(prompt="Enter your Axiom password: ",
+                               mask='*').strip()
     return username, password
