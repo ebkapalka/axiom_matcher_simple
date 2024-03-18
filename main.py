@@ -16,7 +16,7 @@ def wrapup_db(config: dict):
     :return: None
     """
     uri = config["database uri"]
-    db_manager = DatabaseManager(uri)
+    db_manager = DatabaseManager(uri, "wrapup")
     db_manager.reset_checked_out_urls()
     db_manager.print_stats()
 
@@ -30,7 +30,7 @@ def run_fetcher(config: dict, credentials: dict):
     :return: None
     """
     uri = config["database uri"]
-    db_manager = DatabaseManager(uri)
+    db_manager = DatabaseManager(uri, "fetcher")
     AxiomFetcher(db_manager, config, credentials)
 
 
@@ -44,8 +44,8 @@ def run_worker(config: dict, credentials: dict, worker_id: str):
     :return: None
     """
     uri = config["database uri"]
-    db_manager = DatabaseManager(uri)
     worker_name = f"Worker - {worker_id}"
+    db_manager = DatabaseManager(uri, worker_name)
     AxiomWorker(db_manager, config, credentials, worker_name)
 
 
@@ -57,6 +57,10 @@ def main(num_proc: int, config: dict):
     if isinstance(config["issue types"], str):
         config["issue types"] = [config["issue types"]]
     num_proc = max(1, min(MAX_WORKERS, num_proc))
+
+    uri = config["database uri"]
+    db_resetter = DatabaseManager(uri, "")
+    db_resetter.reset_checked_out_urls()
     cred_getter = AxiomDummy(config)
     creds = cred_getter.get_credentials()
     fetch_proc = Process(target=run_fetcher,args=(config, creds))
@@ -77,7 +81,7 @@ def main(num_proc: int, config: dict):
 
 
 if __name__ == '__main__':
-    num_processes = 0
+    num_processes = 10
     configuration = {
         "environment mode": "prod",  # "prod" or "test"
         "issue types": ["verify", "error"],  # "verify" or "error"
