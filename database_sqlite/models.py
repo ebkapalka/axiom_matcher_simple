@@ -22,5 +22,5 @@ class URL(Base):
     __tablename__ = 'urls'
     url = Column(String, primary_key=True)
     checked_out_by = Column(String, nullable=True)
-    is_processed = Column(Boolean, default=False)
+    processed_by = Column(String, nullable=True)
     timestamp = Column(DateTime, server_default=func.now())
