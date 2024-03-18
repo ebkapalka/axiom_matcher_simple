@@ -41,7 +41,9 @@ class AxiomWorker:
         self.identifier = identifier
         options = webdriver.ChromeOptions()
         # options.add_argument('--headless')
+        # options.add_argument('--disable-gpu')
         self.driver = webdriver.Chrome(options=options)
+        self.driver.minimize_window()
         self.database = database
         perform_login(self.driver,
                       self.login_url,
@@ -61,7 +63,7 @@ class AxiomWorker:
             while not url:
                 time.sleep(random.uniform(1, 2))
                 url = self.database.check_out_url()
-            print(f"{self.identifier} processing {url}")
+            # print(f"{self.identifier} processing {url}")
 
             # navigate to the URL
             self.driver.get(url)
@@ -72,7 +74,7 @@ class AxiomWorker:
             # identify the page and handle it
             page = identify_page(self.driver)
             wait_for_loading(self.driver)
-            while page != "dashboard":
+            while page not in ["dashboard", "lock expired"]:
                 if page in HANDLERS:
                     result = HANDLERS[page](self.driver)
                     if page.startswith("error"):
