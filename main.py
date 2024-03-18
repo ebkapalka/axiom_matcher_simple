@@ -6,7 +6,7 @@ from database_sqlite.database import DatabaseManager
 from multiprocessing import Process
 import atexit
 
-MAX_WORKERS = 20
+MAX_WORKERS = 12
 
 
 def wrapup_db(config: dict):
@@ -62,6 +62,7 @@ def main(num_proc: int, config: dict):
     cred_getter = AxiomDummy(config)
     creds = cred_getter.get_credentials()
     fetch_proc = Process(target=run_fetcher,args=(config, creds))
+    fetch_proc.start()
 
     # start the processes
     worker_processes = []
@@ -70,7 +71,6 @@ def main(num_proc: int, config: dict):
                               args=(config, creds, worker_id))
         worker_processes.append(worker_proc)
         worker_proc.start()
-    fetch_proc.start()
 
     # wait for the processes to finish
     for p in worker_processes:
@@ -79,7 +79,7 @@ def main(num_proc: int, config: dict):
 
 
 if __name__ == '__main__':
-    num_processes = 12
+    num_processes = 4
     configuration = {
         "environment mode": "prod",  # "prod" or "test"
         "issue types": ["verify", "error"],  # "verify" or "error"
