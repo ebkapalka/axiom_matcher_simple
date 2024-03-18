@@ -43,7 +43,7 @@ class AxiomWorker:
         perform_login(self.driver,
                       self.login_url,
                       self.credentials)
-        print("Worker login successful")
+        print(f"{self.identifier} login successful")
         self.main_loop()
 
     def main_loop(self):
@@ -52,12 +52,16 @@ class AxiomWorker:
         :return: None
         """
         ...
-        # while True:
-        #     # check out a URL from the database
-        #     url = self.database.check_out_url(self.identifier)
-        #     while not url:
-        #         time.sleep(random.uniform(1, 2))
-        #         url = self.database.check_out_url()
+        while True:
+            # check out a URL from the database
+            url = self.database.check_out_url()
+            while not url:
+                time.sleep(random.uniform(1, 2))
+                url = self.database.check_out_url()
+            print(f"{self.identifier} processing {url}")
+            time.sleep(random.uniform(1, 20))
+            self.database.mark_url_as_processed(url)
+
         #
         #     # navigate to the URL
         #     self.driver.get(url.url)
