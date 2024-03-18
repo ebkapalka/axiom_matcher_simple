@@ -1,3 +1,4 @@
+from selenium.webdriver import DesiredCapabilities
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
@@ -42,6 +43,7 @@ class AxiomWorker:
         options = webdriver.ChromeOptions()
         # options.add_argument('--headless')
         # options.add_argument('--disable-gpu')
+        # options.add_argument('--log-level=3')
         self.driver = webdriver.Chrome(options=options)
         self.driver.minimize_window()
         self.database = database
