@@ -79,7 +79,7 @@ def main(num_proc: int, config: dict):
 
 
 if __name__ == '__main__':
-    num_processes = 4
+    num_processes = 8
     configuration = {
         "environment mode": "prod",  # "prod" or "test"
         "issue types": ["verify", "error"],  # "verify" or "error"
