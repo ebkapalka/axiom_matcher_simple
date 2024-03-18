@@ -4,7 +4,6 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium import webdriver
 import time
-import sys
 
 from browser_utilities.await_loading import wait_for_loading
 from browser_utilities.general_utils import generate_urls
@@ -71,5 +70,5 @@ class AxiomFetcher:
             self.actions.move_to_element(button_next).perform()
             WebDriverWait(self.driver, 5).until(
                 EC.element_to_be_clickable((By.ID, "pagination-next-page")))
-            print(span_stats)
+            # print(span_stats)
             button_next.click()
