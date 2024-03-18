@@ -3,11 +3,8 @@ from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.common import NoSuchElementException
 from selenium.webdriver.common.by import By
-from urllib.parse import urljoin
 from selenium import webdriver
 import sys
-
-from browser_utilities.await_loading import wait_for_loading
 
 
 def perform_login(driver: webdriver, login_url: str, credentials: dict, timeout=5) -> None:
@@ -77,7 +74,7 @@ def identify_page(driver: webdriver) -> str:
 
     # check for lock expired popup
     try:
-        WebDriverWait(driver, 5).until(
+        WebDriverWait(driver, 1).until(
             EC.invisibility_of_element_located((By.XPATH, "//h2[text()='Lock Expired']")))
     except:
         return "lock expired"
