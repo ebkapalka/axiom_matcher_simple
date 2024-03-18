@@ -3,6 +3,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver import Keys
 from selenium import webdriver
+import time
 
 from browser_utilities.navigate_verifier import delete_record, skip_record
 from matching_utilities.address_picker import select_address
@@ -21,8 +22,13 @@ def handle_normal(driver: webdriver) -> str:
         return "deleted record"
 
     # handle matched or new record
-    button_done = WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.ID, "SubmitButton")))
+    try:
+        button_done = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.ID, "SubmitButton")))
+    except Exception as e:
+        print("Something wrong with the normal page")
+        print(type(e), e)
+        time.sleep(10000000)
     return_text = button_done.text
     button_done.click()
     if return_text == "Submit Match":
