@@ -26,8 +26,9 @@ def handle_match_dialogue(driver: webdriver) -> str:
         """
         try:
             element = parent_element.find_element(By.XPATH, xpath)
-            if element.text != "":
-                return element
+            text = driver.execute_script("return arguments[0].textContent;", element).strip()
+            if text != "":
+                return text
         except:
             pass
         return False
@@ -48,18 +49,24 @@ def handle_match_dialogue(driver: webdriver) -> str:
         # extract the values for the potential match
         potential_match = {}
         for row in rows:
-            WebDriverWait(driver, 10).until(
-                lambda _: element_has_non_null_text("./td[1]", row))
-            potential_match[row.find_element(By.XPATH, "./td[1]").text] = (
-                row.find_element(By.XPATH, "./td[3]").text)
+            key = WebDriverWait(driver, 10).until(
+                    lambda _: element_has_non_null_text("./td[1]", row))
+            element = row.find_element(By.XPATH, "./td[3]")
+            value = driver.execute_script(
+                "return arguments[0].textContent;", element)
+            potential_match[key] = value.strip()
         potential_match["element"] = record
         potential_matches.append(potential_match)
 
         # extract the values for the incoming prospect
         if not incoming_prospect:
             for row in rows[1:]:
-                incoming_prospect[row.find_element(By.XPATH, "./td[1]").text] = (
-                    row.find_element(By.XPATH, "./td[2]").text)
+                key = WebDriverWait(driver, 10).until(
+                    lambda _: element_has_non_null_text("./td[1]", row))
+                element = row.find_element(By.XPATH, "./td[2]")
+                value = driver.execute_script(
+                    "return arguments[0].textContent;", element)
+                incoming_prospect[key] = value.strip()
 
     # decide the best match and act accordingly
     best_match = decide_best_match(incoming_prospect, potential_matches)
