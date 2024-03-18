@@ -6,7 +6,7 @@ from database_sqlite.database import DatabaseManager
 from multiprocessing import Process
 import atexit
 
-MAX_WORKERS = 12
+MAX_WORKERS = 20
 
 
 def wrapup_db(config: dict):
@@ -79,7 +79,7 @@ def main(num_proc: int, config: dict):
 
 
 if __name__ == '__main__':
-    num_processes = 8
+    num_processes = 12
     configuration = {
         "environment mode": "prod",  # "prod" or "test"
         "issue types": ["verify", "error"],  # "verify" or "error"
