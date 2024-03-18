@@ -14,6 +14,13 @@ def handle_normal(driver: webdriver) -> str:
     :param driver: webdriver
     :return: None
     """
+    # handle duplicate record
+    duplicate_indicator = driver.find_element(By.CLASS_NAME, "DuplicateRecordsText")
+    if duplicate_indicator.is_displayed():
+        delete_record(driver, "duplicate")
+        return "deleted record"
+
+    # handle matched or new record
     button_done = WebDriverWait(driver, 10).until(
         EC.element_to_be_clickable((By.ID, "SubmitButton")))
     return_text = button_done.text
