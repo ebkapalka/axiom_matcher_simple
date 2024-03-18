@@ -70,6 +70,11 @@ def identify_page(driver: webdriver) -> str:
             pass
         return False
 
+    # check for dashboard
+    page_title = driver.title
+    if page_title == "Axiom Elite - Dashboard":
+        return "dashboard"
+
     # check for the match dialogue
     try:
         match_dialogue = driver.find_element(By.CLASS_NAME, "bs-matchstatus-modal")
