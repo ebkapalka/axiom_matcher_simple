@@ -36,14 +36,16 @@ class AxiomWorker:
     """
     AxiomWorker class
     """
-    def __init__(self, database: DatabaseManager, config: dict, credentials: dict, identifier: str):
+    def __init__(self, database: DatabaseManager, config: dict,
+                 credentials: dict, identifier: str, headless=True):
         self.manager_url, self.verifier_url, self.login_url = generate_urls(config)
         self.credentials = credentials
         self.identifier = identifier
         options = webdriver.ChromeOptions()
-        # options.add_argument('--headless')
-        # options.add_argument('--disable-gpu')
-        # options.add_argument('--log-level=3')
+        if headless:
+            options.add_argument('--headless')
+            options.add_argument('--disable-gpu')
+        options.add_argument('--log-level=3')
         self.driver = webdriver.Chrome(options=options)
         self.driver.minimize_window()
         self.database = database
