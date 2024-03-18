@@ -6,7 +6,8 @@ from database_sqlite.models import Base, AxiomEvent, URL
 
 
 class DatabaseManager:
-    def __init__(self, uri: str):
+    def __init__(self, uri: str, worker_name: str):
+        self.worker_name = worker_name
         self.engine = create_engine(uri, echo=False)
 
         # Ensure WAL mode is set for SQLite databases
@@ -64,22 +65,22 @@ class DatabaseManager:
         finally:
             session.close()
 
-    def check_out_url(self, worker_id: str) -> URL:
+    def check_out_url(self) -> str | None:
         """
         Atomically check out a URL that hasn't been checked out or processed,
         assigning it to the specified worker.
-        :param worker_id: The identifier of the worker checking out the URL.
+        :param worker_name: The identifier of the worker checking out the URL.
         :return: URL object or None if no URL is available.
         """
         session = self.get_session()
         try:
             session.begin()
             url = session.query(URL).filter_by(checked_out_by=None,
-                                               is_processed=False).first()
+                                               processed_by=None).first()
             if url:
-                url.checked_out_by = worker_id
+                url.checked_out_by = self.worker_name
                 session.commit()
-                return url
+                return url.url
         except Exception as e:
             session.rollback()
             print(type(e), e)
@@ -87,10 +88,10 @@ class DatabaseManager:
             session.close()
         return None
 
-
     def mark_url_as_processed(self, url_str: str):
         """
         Mark a URL as processed, clearing the worker assignment.
+        :param worker_name: The identifier of the worker processing the URL.
         :param url_str: The URL string to mark as processed.
         :return: None
         """
@@ -98,7 +99,7 @@ class DatabaseManager:
         try:
             session.begin()
             url_obj = session.query(URL).filter_by(url=url_str).one()
-            url_obj.is_processed = True
+            url_obj.processed_by = self.worker_name
             url_obj.checked_out_by = None
             session.commit()
         except Exception as e:
@@ -115,8 +116,8 @@ class DatabaseManager:
         session = self.get_session()
         try:
             session.begin()
-            # Correctly use SQLAlchemy's not_() function for NULL comparison
-            session.query(URL).filter(URL.checked_out_by.is_not(None)).update({"checked_out_by": None})
+            session.query(URL).filter(URL.checked_out_by.is_not(
+                None)).update({"checked_out_by": None})
             session.commit()
         except Exception as e:
             session.rollback()
