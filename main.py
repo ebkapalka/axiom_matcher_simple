@@ -82,7 +82,7 @@ if __name__ == '__main__':
     num_processes = 8
     configuration = {
         "environment mode": "prod",  # "prod" or "test"
-        "issue types": ["verify", "error"],  # "verify" or "error"
+        "issue types": ["verify"],  # "verify" or "error"
         "record type": "prospects",  # "prospects" or "act"
         "database uri": "sqlite:///database_sqlite/database.db"
     }
