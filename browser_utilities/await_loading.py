@@ -12,21 +12,22 @@ def wait_for_loading(driver: webdriver, timeout=300):
     :param timeout: int
     :return: None
     """
-    WebDriverWait(driver, timeout).until(
-        EC.invisibility_of_element_located((By.CLASS_NAME, "loader-container")))
-    WebDriverWait(driver, timeout).until(
-        EC.invisibility_of_element_located((By.CLASS_NAME, "progress-bar")))
-    WebDriverWait(driver, timeout).until(
-        EC.invisibility_of_element_located((By.CLASS_NAME, "knyrie")))
-    WebDriverWait(driver, timeout).until(
-        EC.invisibility_of_element_located((By.ID, "fullpage-overlay")))
-    WebDriverWait(driver, timeout).until(
-        lambda d: _class_no_longer_present(d, (By.CSS_SELECTOR, "input.updating")))
     try:
-        WebDriverWait(driver, 1).until(
+        WebDriverWait(driver, timeout).until(
+            EC.invisibility_of_element_located((By.CLASS_NAME, "loader-container")))
+        WebDriverWait(driver, timeout).until(
+            EC.invisibility_of_element_located((By.CLASS_NAME, "progress-bar")))
+        WebDriverWait(driver, timeout).until(
+            EC.invisibility_of_element_located((By.CLASS_NAME, "knyrie")))
+        WebDriverWait(driver, timeout).until(
+            EC.invisibility_of_element_located((By.ID, "fullpage-overlay")))
+        WebDriverWait(driver, timeout).until(
+            lambda d: _class_no_longer_present(d, (By.CSS_SELECTOR, "input.updating")))
+        WebDriverWait(driver, timeout).until(
             EC.invisibility_of_element_located((By.ID, "Form3")))
     except TimeoutException:
         driver.refresh()
+        wait_for_loading(driver, timeout)
 
 
 def _class_no_longer_present(driver: webdriver, selector: tuple):
