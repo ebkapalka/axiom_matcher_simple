@@ -70,10 +70,12 @@ class DatabaseManager:
             if processed_records:
                 start_time = processed_records[-1].timestamp
                 end_time = processed_records[0].timestamp
-                total_hours = (end_time - start_time).total_seconds() / 3600.0
+                total_seconds = (end_time - start_time).total_seconds()
+                total_hours = total_seconds / 3600.0
                 processed_per_hour = len(processed_records) / total_hours if total_hours > 0 else 0
-                processed_per_minute = processed_per_hour / 60
+                processed_per_minute = processed_per_hour / 60 if processed_per_hour > 0 else 0
+                seconds_per_record = 60 / processed_per_minute if processed_per_minute > 0 else float('inf')
                 print(f"Processed Records Per Hour: ~{processed_per_hour:.2f}")
                 print(f"Processed Records Per Minute: ~{processed_per_minute:.2f}")
-                print(f"Seconds per Record: ~{60 / processed_per_minute:.5f}")
+                print(f"Seconds per Record: ~{seconds_per_record:.5f}")
                 print(f"Total Hours Last Run: {total_hours:.2f}")
