@@ -18,7 +18,7 @@ def run_axiom_driver(uri: str, mode: str, opt: str):
 
 if __name__ == '__main__':
     run_mode = "prod"
-    options = ["default", "error"]
+    options = ["default"]
     db_uri = "sqlite:///database_sqlite/database.db"
     processes = []
     for option in options:
