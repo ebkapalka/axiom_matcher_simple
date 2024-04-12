@@ -11,12 +11,14 @@ import re
 from browser_utilities.navigate_verifier import skip_record
 
 
-def handle_match_dialogue(driver: webdriver) -> str:
+def handle_match_dialogue(driver: webdriver, thorough=False) -> str:
     """
     Handle the match dialogue by extracting the first row of data from a table.
-    :param driver: Instance of webdriver to interact with the browser.
+    :param driver: Instance of webdriver to interact with the browser
+    :param thorough: Boolean to indicate whether to use SQL queries to find the best match.
     :return: Dictionary mapping table column headers to the values of the first row.
     """
+    # TODO: Implement the thorough option
     match_table = WebDriverWait(driver, 30).until(
         EC.presence_of_element_located((By.ID, "MatchListTable")))
     records = match_table.find_elements(By.XPATH, "./tbody/tr")
@@ -69,6 +71,9 @@ def decide_best_match(incoming_prospect: dict, potential_matches: list[dict], na
     :param name_thresh: Threshold for the name similarity score.
     :return: Student_id of the best match.
     """
+    # TODO: impliment some sort of system to match on imperfect keys,
+    #  such as "Name" vs "Student Name" or "City" vs "Home City".  This
+    #  will require a mapping of keys to their alternate keys.
     prospect_name = (process_name(incoming_prospect["First Name"],
                                   incoming_prospect["Last Name"]))
     for potential_match in potential_matches:
