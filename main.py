@@ -9,7 +9,7 @@ def run_axiom_driver(uri: str, mode: str, opt: str):
     Run the AxiomDriver in a separate process
     :param uri: uri for the database
     :param mode: "prod" or "test"
-    :param option: "default" or "error"
+    :param opt: "default" or "error"
     :return: None
     """
     db_manager = DatabaseManager(uri)
@@ -17,6 +17,7 @@ def run_axiom_driver(uri: str, mode: str, opt: str):
 
 
 if __name__ == '__main__':
+    # TODO: add option to pick source
     run_mode = "prod"
     options = ["default"]
     db_uri = "sqlite:///database_sqlite/database.db"
