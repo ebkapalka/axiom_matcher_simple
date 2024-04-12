@@ -31,6 +31,7 @@ def handle_bad_address(driver: webdriver) -> str:
     :param driver: webdriver
     :return: "deleted record" or '' depending on the result of the operation
     """
+    # TODO: make this more robust
     error_icon_xpath = ("//i[contains(@class, 'sourcefield-error') "
                         "and not(contains(@class, 'hidden'))]")
     error_icon = driver.find_elements(By.XPATH, error_icon_xpath)[0]
@@ -103,6 +104,16 @@ def handle_bad_city(driver: webdriver):
 
 
 def handle_bad_zip(driver: webdriver):
+    """
+    Delete record with bad zipcode
+    :param driver: webdriver
+    :return: "deleted record", since this condition always results in a deleted record
+    """
+    delete_record(driver, "bad address")
+    return "deleted record"
+
+
+def handle_bad_state(driver: webdriver):
     """
     Delete record with bad zipcode
     :param driver: webdriver
