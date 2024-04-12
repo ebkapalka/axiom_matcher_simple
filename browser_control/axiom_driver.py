@@ -6,7 +6,7 @@ import sys
 
 from browser_utilities.case_handlers import (handle_normal, handle_bad_ceeb, handle_bad_address,
                                              handle_bad_firstname, handle_bad_lastname,
-                                             handle_bad_city, handle_bad_zip)
+                                             handle_bad_city, handle_bad_zip, handle_bad_state)
 from browser_utilities.navigate_verifier import identify_page, goto_verifier
 from matching_utilities.match_handler import handle_match_dialogue
 from browser_utilities.await_loading import wait_for_loading
@@ -22,11 +22,16 @@ HANDLERS = {
     "error - First Name": handle_bad_firstname,
     "error - Last Name": handle_bad_lastname,
     "error - City": handle_bad_city,
+    "error - State": handle_bad_state,
     "error - Zip": handle_bad_zip,
     # add other handlers here as needed
 }
 
+
 class AxiomDriver:
+    """
+    Class to control the Axiom driver
+    """
     def __init__(self, database: DatabaseManager, run_mode: str = "test", option: str = "default"):
         if run_mode == "test":
             self.base_url = "https://axiom-elite-test.msu.montana.edu/"
