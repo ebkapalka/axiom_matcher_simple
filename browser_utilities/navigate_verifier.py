@@ -18,6 +18,9 @@ def goto_verifier(driver: webdriver, base_url: str, option: str = "default"):
     :return: None
     """
 
+    # TODO: change the way this is done.  You should be able to just goto the URL of the
+    #  specific verifier you want to work on.
+
     def _button_with_color_darkgray(dr: webdriver) -> WebElement | bool:
         """
         Find the button with the darkgray color
@@ -82,6 +85,7 @@ def identify_page(driver: webdriver) -> str:
     :return: string identifying the page
     """
 
+    # TODO: move all of these special EC functions to their own file
     def element_has_non_null_text(xpath: str, parent_element: WebElement) -> WebElement | bool:
         """
         Check if an element has non-null text
