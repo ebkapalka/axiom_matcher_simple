@@ -4,29 +4,29 @@ from database_sqlite.database import DatabaseManager
 from multiprocessing import Process
 
 
-def run_axiom_driver(uri: str, mode: str, stt: str, src: str| int):
+def run_axiom_driver(uri: str, env: str, stt: str, src: str | int):
     """
     Run the AxiomDriver in a separate process
     :param uri: uri for the database
-    :param mode: "prod" or "test"
+    :param env: "prod" or "test"
     :param stt: "Verify" or "Error"
     :param src: numeric key for the Source
     :return: None
     """
     stt = stt.capitalize()
     db_manager = DatabaseManager(uri)
-    AxiomDriver(db_manager, mode, src, stt)
+    AxiomDriver(db_manager, env, src, stt)
 
 
 if __name__ == '__main__':
     source = "601"  # prospect
-    run_mode = "prod"  # 'test' or 'prod'
+    environment = "prod"  # 'test' or 'prod'
     statuses = ["Verify"]  # must be a list
     db_uri = "sqlite:///database_sqlite/database.db"
     processes = []
     for status in statuses:
         p = Process(target=run_axiom_driver, args=(
-            db_uri, run_mode, status, source))
+            db_uri, environment, status, source))
         processes.append(p)
         p.start()
 
