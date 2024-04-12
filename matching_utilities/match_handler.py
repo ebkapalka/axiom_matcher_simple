@@ -18,7 +18,7 @@ def handle_match_dialogue(driver: webdriver, thorough=False) -> str:
     :param thorough: Boolean to indicate whether to use SQL queries to find the best match.
     :return: Dictionary mapping table column headers to the values of the first row.
     """
-    # TODO: Implement the thorough option
+    # TODO: Implement the thorough status
     match_table = WebDriverWait(driver, 30).until(
         EC.presence_of_element_located((By.ID, "MatchListTable")))
     records = match_table.find_elements(By.XPATH, "./tbody/tr")
