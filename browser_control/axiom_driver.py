@@ -2,14 +2,13 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium import webdriver
-import time
 import sys
 
 from browser_utilities.case_handlers import (handle_normal, handle_bad_ceeb, handle_bad_address,
                                              handle_bad_firstname, handle_bad_lastname,
                                              handle_bad_city, handle_bad_zip, handle_bad_state)
-from browser_utilities.navigate_verifier import identify_page, goto_verifier
 from matching_utilities.match_handler import handle_match_dialogue
+from browser_utilities.navigate_verifier import identify_page
 from browser_utilities.await_loading import wait_for_loading
 from database_sqlite.database import DatabaseManager
 
