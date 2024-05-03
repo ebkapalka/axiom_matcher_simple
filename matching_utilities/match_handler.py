@@ -10,6 +10,8 @@ import re
 
 from browser_utilities.navigate_verifier import skip_record
 
+PATTERN = re.compile(r'\D')
+
 
 def handle_match_dialogue(driver: webdriver, thorough=False) -> str:
     """
@@ -19,32 +21,68 @@ def handle_match_dialogue(driver: webdriver, thorough=False) -> str:
     :return: Dictionary mapping table column headers to the values of the first row.
     """
     # TODO: Implement the thorough status
-    match_table = WebDriverWait(driver, 30).until(
-        EC.presence_of_element_located((By.ID, "MatchListTable")))
-    records = match_table.find_elements(By.XPATH, "./tbody/tr")
-    incoming_prospect = {}
-    potential_matches = []
-    for record in records[1:]:
-        while 'selected-value' not in record.get_attribute("class"):
-            record.click()
-            time.sleep(0.1)
-        comparison_table = WebDriverWait(driver, 30).until(
-            EC.presence_of_element_located((By.ID, "MatchComparisonTable")))
-        rows = comparison_table.find_elements(By.XPATH, "./tbody/tr")
+    js_script = """
+        const waitForElement = async (selector, timeout = 30000) => {
+            const startTime = new Date().getTime();
+            return new Promise((resolve, reject) => {
+                const interval = setInterval(() => {
+                    const elapsedTime = new Date().getTime() - startTime;
+                    const element = document.querySelector(selector);
+                    if (element) {
+                        clearInterval(interval);
+                        resolve(element);
+                    } else if (elapsedTime >= timeout) {
+                        clearInterval(interval);
+                        reject('Element ' + selector + ' not found within ' + timeout + 'ms');
+                    }
+                }, 100);
+            });
+        };
 
-        # extract the values for the potential match
-        potential_match = {}
-        for row in rows:
-            potential_match[row.find_element(By.XPATH, "./td[1]").text] = (
-                row.find_element(By.XPATH, "./td[3]").text)
-        potential_match["element"] = record
-        potential_matches.append(potential_match)
+        const extractData = async () => {
+            const matchTable = await waitForElement('#MatchListTable');
+            const records = matchTable.querySelectorAll('tbody tr');
+            const potentialMatches = [];
+            let incomingProspect = {};
 
-        # extract the values for the incoming prospect
-        if not incoming_prospect:
-            for row in rows[1:]:
-                incoming_prospect[row.find_element(By.XPATH, "./td[1]").text] = (
-                    row.find_element(By.XPATH, "./td[2]").text)
+            for (let i = 1; i < records.length; i++) {
+                const record = records[i];
+                record.click();  // Simulate the click
+
+                const comparisonTable = await waitForElement('#MatchComparisonTable');
+                const rows = comparisonTable.querySelectorAll('tbody tr');
+                const potentialMatch = {};
+
+                for (const row of rows) {
+                    const key = row.cells[0].innerText;
+                    const matchValue = row.cells[2].innerText;
+                    potentialMatch[key] = matchValue;
+                }
+                potentialMatch['elementSelector'] = '#MatchListTable tbody tr:nth-child(' + (i + 1) + ')';
+                potentialMatches.push(potentialMatch);
+
+                if (Object.keys(incomingProspect).length === 0) {
+                    for (const row of rows) {
+                        const key = row.cells[0].innerText;
+                        const prospectValue = row.cells[1].innerText;
+                        incomingProspect[key] = prospectValue;
+                    }
+                }
+            }
+            return { 'potentialMatches': potentialMatches, 'incomingProspect': incomingProspect };
+        };
+
+        return extractData();
+    """
+    incoming_prospect, potential_matches = (
+        driver.execute_script(js_script).values())
+
+    # find the elements for the potential matches
+    for match in potential_matches:
+        selector = match['elementSelector']
+        match['element'] = driver.find_element(
+            By.CSS_SELECTOR, selector)
+        del match['elementSelector']
 
     # decide the best match and act accordingly
     best_match = decide_best_match(incoming_prospect, potential_matches)
@@ -71,29 +109,58 @@ def decide_best_match(incoming_prospect: dict, potential_matches: list[dict], na
     :param name_thresh: Threshold for the name similarity score.
     :return: Student_id of the best match.
     """
-    # TODO: impliment some sort of system to match on imperfect keys,
-    #  such as "Name" vs "Student Name" or "City" vs "Home City".  This
-    #  will require a mapping of keys to their alternate keys.
-    prospect_name = (process_name(incoming_prospect["First Name"],
-                                  incoming_prospect["Last Name"]))
+
+    def _get_with_fallback(d: dict, key: str, fallback_key: str) -> str:
+        value = d[key] if key in d else d[fallback_key]
+        return str(value).strip().lower()
+
+    prospect_values = {
+        "first_name": _get_with_fallback(incoming_prospect,"First Name", "Student First Name"),
+        "last_name": _get_with_fallback(incoming_prospect,"Last Name", "Student Last Name"),
+        "email": _get_with_fallback(incoming_prospect,"Email", "Student E-mail Address"),
+        "addr1": _get_with_fallback(incoming_prospect,"Address 1", "Street Address"),
+        "birthday": _get_with_fallback(incoming_prospect,"Birth Date", "Date of Birth (MMDDYYYY)"),
+        "city": incoming_prospect.get("City", None),
+        "phone": incoming_prospect.get("Phone", None)
+    }
+    prospect_name = (process_name(prospect_values["first_name"], prospect_values["last_name"]))
+
     for potential_match in potential_matches:
-        match_name = process_name(potential_match["First Name"],
-                                  potential_match["Last Name"])
+        match_values = {
+            "first_name": _get_with_fallback(potential_match,"First Name", "Student First Name"),
+            "last_name": _get_with_fallback(potential_match,"Last Name", "Student Last Name"),
+            "email": _get_with_fallback(potential_match,"Email", "Student E-mail Address"),
+            "addr1": _get_with_fallback(potential_match,"Address 1", "Street Address"),
+            "birthday": _get_with_fallback(potential_match,"Birth Date", "Date of Birth (MMDDYYYY)"),
+            "city": potential_match.get("City", None),
+            "phone": potential_match.get("Phone", None)
+        }
+        match_name = (process_name(match_values["first_name"], match_values["last_name"]))
         name_similarity = fuzz.token_set_ratio(prospect_name, match_name)
-        if potential_match["Email"] == incoming_prospect["Email"]:
+        if (prospect_values["email"] and match_values["email"]
+                and prospect_values["email"] == match_values["email"]):
             if name_similarity <= name_thresh:
                 return "skip"
             return potential_match["element"]
-        elif potential_match["Address 1"] == incoming_prospect["Address 1"]:
+        elif (prospect_values["phone"] and match_values["phone"]
+              and PATTERN.sub('', str(prospect_values["phone"])) ==
+              PATTERN.sub('', str(match_values["phone"]))):
             if name_similarity <= name_thresh:
                 return "skip"
             return potential_match["element"]
-        elif (potential_match["City"] == incoming_prospect["City"]
-              and potential_match["Birth Date"] == incoming_prospect["Birth Date"]
+        elif (prospect_values["addr1"] and match_values["addr1"]
+              and prospect_values["addr1"] == match_values["addr1"]):
+            if name_similarity <= name_thresh:
+                return "skip"
+            return potential_match["element"]
+        elif (prospect_values["city"] and match_values["city"]
+              and prospect_values["city"] == match_values["city"]
+              and prospect_values["birthday"] == match_values["birthday"]
               and name_similarity == 100):
             return potential_match["element"]
-        elif (potential_match["City"] == incoming_prospect["City"]
-              and potential_match["Birth Date"] == incoming_prospect["Birth Date"]
+        elif (prospect_values["city"] and match_values["city"]
+              and prospect_values["city"] == match_values["city"]
+              and prospect_values["birthday"] == match_values["birthday"]
               and name_similarity >= name_thresh):
             return "skip"
         else:
@@ -122,6 +189,7 @@ def process_name(first_name: str, last_name: str) -> str:
     :param last_name: Last name of the student.
     :return: Processed name.
     """
+
     def _normalize_string(input_string: str) -> str:
         """
         Normalize a string by removing accents and non-alpha characters, and converting to lowercase.
