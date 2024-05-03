@@ -3,11 +3,7 @@ from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.common import NoSuchElementException
 from selenium.webdriver.common.by import By
-from urllib.parse import urljoin
 from selenium import webdriver
-import sys
-
-from browser_utilities.await_loading import wait_for_loading
 
 
 def identify_page(driver: webdriver) -> str:
@@ -72,7 +68,7 @@ def delete_record(driver: webdriver, reason: str, timeout=10) -> None:
     :return: None
     """
     print(f"Deleting record: {reason}")
-
+    input("Press Enter to continue...")
     # click delete button
     button_delete = WebDriverWait(driver, timeout).until(
         EC.element_to_be_clickable((By.ID, "DeleteButton")))
