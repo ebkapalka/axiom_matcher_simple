@@ -19,7 +19,7 @@ def run_axiom_driver(uri: str, env: str, stt: str, src: str | int):
 
 
 if __name__ == '__main__':
-    source = "601"  # prospect
+    source = "601"  # 601=prospect, 361=ACT
     environment = "prod"  # 'test' or 'prod'
     statuses = ["Verify"]  # must be a list
     db_uri = "sqlite:///database_sqlite/database.db"
