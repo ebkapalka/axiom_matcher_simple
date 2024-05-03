@@ -114,6 +114,8 @@ def decide_best_match(incoming_prospect: dict, potential_matches: list[dict], na
         value = d[key] if key in d else d[fallback_key]
         return str(value).strip().lower()
 
+    # TODO: use a list of dictionaries to store the potential keys.  Compare the set of keys in the incoming prospect
+    #  to the set of keys in the first potential match to determine which keys to use.
     prospect_values = {
         "first_name": _get_with_fallback(incoming_prospect,"First Name", "Student First Name"),
         "last_name": _get_with_fallback(incoming_prospect,"Last Name", "Student Last Name"),
