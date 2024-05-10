@@ -59,16 +59,21 @@ def identify_page(driver: webdriver) -> str:
         return "normal"
 
 
-def delete_record(driver: webdriver, reason: str, timeout=10) -> None:
+def delete_record(driver: webdriver, reason: str, timeout=10, override=False) -> None:
     """
     Delete the current record, entering the reason
     :param driver: webdriver
     :param reason: explanation for deletion
     :param timeout: time to wait for the elements
+    :param override: flag to skip the record without deletion
     :return: None
     """
+    # check if the record should be skipped
+    if override:
+        skip_record(driver)
+        return
+
     print(f"Deleting record: {reason}")
-    input("Press Enter to continue...")
     # click delete button
     button_delete = WebDriverWait(driver, timeout).until(
         EC.element_to_be_clickable((By.ID, "DeleteButton")))
