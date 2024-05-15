@@ -111,3 +111,5 @@ class AxiomFetcher:
                         EC.presence_of_element_located((By.ID, "currentPageInput"))).get_attribute("value"))
                 except ElementClickInterceptedException:
                     time.sleep(0.5)
+                    current_page = (WebDriverWait(self.driver, 5).until(
+                        EC.presence_of_element_located((By.ID, "currentPageInput"))).get_attribute("value"))
