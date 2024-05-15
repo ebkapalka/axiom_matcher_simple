@@ -54,7 +54,7 @@ def main(num_proc: int, config: dict):
     """
     if isinstance(config["issue types"], str):
         config["issue types"] = [config["issue types"]]
-    num_proc = max(1, min(MAX_WORKERS, num_proc))
+    num_proc = max(0, min(MAX_WORKERS, num_proc))
 
     uri = config["database uri"]
     db_resetter = DatabaseManager(uri, "")
@@ -79,11 +79,11 @@ def main(num_proc: int, config: dict):
 
 
 if __name__ == '__main__':
-    num_processes = 8
+    num_processes = 0
     configuration = {
         "environment mode": "prod",  # "prod" or "test"
-        "issue types": ["verify"],  # "verify" or "error"
-        "record type": "prospects",  # "prospects" or "act"
+        "issue types": ["verify", "error"],  # "verify" and / or "error"
+        "source id": "601",  # 601="prospects", 301="act"
         "database uri": "sqlite:///database_sqlite/database.db"
     }
     atexit.register(wrapup_db, configuration)
