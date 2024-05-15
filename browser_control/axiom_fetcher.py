@@ -1,9 +1,11 @@
+
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.common import TimeoutException, ElementClickInterceptedException
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
 from selenium import webdriver
+from copy import copy
 import time
 
 from browser_utilities.navigate_verifier import perform_login
@@ -92,12 +94,20 @@ class AxiomFetcher:
             selector = (By.XPATH, "//button[@title='Go to the next page']")
             button_next = WebDriverWait(self.driver, 5).until(
                 EC.presence_of_element_located(selector))
+            if not button_next.is_enabled():
+                print("No more pages to fetch")
+                return
+
             self.actions.move_to_element(button_next).perform()
-            while True:
+            initial_page = self.driver.find_element(
+                By.ID, "currentPageInput").get_attribute("value")
+            current_page = copy(initial_page)
+            while current_page == initial_page:
                 try:
-                    button_next = WebDriverWait(self.driver, 5).until(
-                        EC.element_to_be_clickable(selector))
-                    button_next.click()
-                    break
+                    WebDriverWait(self.driver, 5).until(
+                        EC.element_to_be_clickable(selector)).click()
+                    wait_for_loading(self.driver)
+                    current_page = (WebDriverWait(self.driver, 5).until(
+                        EC.presence_of_element_located((By.ID, "currentPageInput"))).get_attribute("value"))
                 except ElementClickInterceptedException:
                     time.sleep(0.5)
