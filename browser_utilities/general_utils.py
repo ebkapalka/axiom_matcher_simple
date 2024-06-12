@@ -32,7 +32,7 @@ def generate_urls(config: dict) -> tuple[str, str, str]:
     return manager_url, verifier_url, login_url
 
 
-def prompt_credentials(env="PROD") -> tuple[str, str]:
+def prompt_credentials(env="TEST") -> tuple[str, str]:
     """
     Prompt the user for their Axiom credentials
     :return: tuple of username and password
