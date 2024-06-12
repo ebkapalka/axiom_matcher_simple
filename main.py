@@ -1,5 +1,5 @@
-from browser_control.axiom_fetcher import AxiomFetcher
 from browser_control.axiom_logindummy import AxiomDummy
+from browser_control.axiom_fetcher import AxiomFetcher
 from browser_control.axiom_worker import AxiomWorker
 from database_sqlite.database import DatabaseManager
 
@@ -15,6 +15,7 @@ def wrapup_db(config: dict):
     :param config: dictionary of configuration options
     :return: None
     """
+    print("Wrapping up the database")
     uri = config["database uri"]
     db_manager = DatabaseManager(uri, "wrapup")
     db_manager.reset_checked_out_urls()
@@ -79,11 +80,11 @@ def main(num_proc: int, config: dict):
 
 
 if __name__ == '__main__':
-    num_processes = 0
+    num_processes = 8
     configuration = {
         "environment mode": "prod",  # "prod" or "test"
-        "issue types": ["verify", "error"],  # "verify" and / or "error"
-        "source id": "601",  # 601="prospects", 301="act"
+        "issue types": ["verify"],  # "verify" and / or "error"
+        "source id": "601",  # find by navigating to a single record in the verifier
         "database uri": "sqlite:///database_sqlite/database.db"
     }
     atexit.register(wrapup_db, configuration)
