@@ -1,4 +1,3 @@
-
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.common import TimeoutException, ElementClickInterceptedException
@@ -15,11 +14,17 @@ from database_sqlite.database import DatabaseManager
 
 
 class AxiomFetcher:
+    """
+    AxiomFetcher class
+    """
+
     def __init__(self, database: DatabaseManager, config: dict, credentials: dict):
         self.manager_url, self.verifier_url, self.login_url = (generate_urls(config))
         self.credentials = credentials
-        self.options = config["issue types"]
-        self.driver = webdriver.Chrome()
+        self.types = config["issue types"]
+        self.options = webdriver.ChromeOptions()
+        # self.options.add_argument('--headless')
+        self.driver = webdriver.Chrome(self.options)
         self.actions = ActionChains(self.driver)
         self.driver.maximize_window()
         self.database = database
@@ -62,7 +67,7 @@ class AxiomFetcher:
         # set the status options
         input_status = WebDriverWait(self.driver, timeout).until(
             EC.presence_of_element_located(selector_status_input))
-        for status in self.options:
+        for status in self.types:
             input_status.send_keys(f"{status}\n")
 
         # click the search button
@@ -87,7 +92,7 @@ class AxiomFetcher:
             prospect_ids = self.driver.execute_script(fetch_script)
             for prospect_id in prospect_ids:
                 new_url = f"{self.verifier_url}{prospect_id}"
-                print(new_url); page_urls.append(new_url)
+                page_urls.append(new_url)
             self.database.bulk_add_urls(page_urls)
 
             # navigate to the next page
