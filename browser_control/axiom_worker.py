@@ -16,7 +16,6 @@ from browser_utilities.navigate_verifier import identify_page, perform_login
 from browser_utilities.await_loading import wait_for_loading
 from database_sqlite.database import DatabaseManager
 
-
 HANDLERS = {
     "match dialogue": handle_match_dialogue,
     "normal": handle_normal,
@@ -36,18 +35,21 @@ class AxiomWorker:
     """
     AxiomWorker class
     """
+
     def __init__(self, database: DatabaseManager, config: dict,
-                 credentials: dict, identifier: str, headless=True):
+                 credentials: dict, identifier: str,
+                 headless=True, max_retries=30) -> None:
         self.manager_url, self.verifier_url, self.login_url = generate_urls(config)
         self.credentials = credentials
         self.identifier = identifier
+        self.max_retries = max_retries
         options = webdriver.ChromeOptions()
         if headless:
             options.add_argument('--headless')
             options.add_argument('--disable-gpu')
         options.add_argument('--log-level=3')
         self.driver = webdriver.Chrome(options=options)
-        self.driver.minimize_window()
+        # self.driver.minimize_window()
         self.database = database
         perform_login(self.driver,
                       self.login_url,
@@ -64,9 +66,14 @@ class AxiomWorker:
         while True:
             # check out a URL from the database
             url = self.database.check_out_url()
-            while not url:
+            try_count = 0
+            while not url and try_count < self.max_retries:
                 time.sleep(random.uniform(1, 2))
                 url = self.database.check_out_url()
+                try_count += 1
+            if not url:
+                print(f"{self.identifier} - no more URLs to process")
+                return
             # print(f"{self.identifier} processing {url}")
 
             # navigate to the URL
