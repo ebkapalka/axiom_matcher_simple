@@ -9,6 +9,7 @@ from browser_utilities.general_utils import (generate_urls,
 
 class AxiomDummy:
     def __init__(self, config: dict):
+        self.config = config
         self.login_url = generate_urls(config)[2]
         self.credentials = {}
 
@@ -29,7 +30,8 @@ class AxiomDummy:
         :return: None
         """
         while True:
-            username, password = prompt_credentials()
+            env = self.config.get("environment mode", "TEST")
+            username, password = prompt_credentials(env)
             self.enter_login_credentials(username, password, timeout)
             button_close = self.driver.find_elements(
                 By.XPATH, "//button[text()='Close']")
